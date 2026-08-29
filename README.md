@@ -1,5 +1,11 @@
 # Accelerando
 
+A guided listening companion for classical music — AI-annotated timelines synced to recordings, plus reasoned recommendations based on your reflections.
+
+## Playback
+
+Recordings are embedded via the [YouTube IFrame API](https://developers.google.com/youtube/iframe_api_reference). Each piece in `lib/pieces.ts` maps to one specific YouTube video; annotation timestamps are relative to that recording, not the work in general.
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
