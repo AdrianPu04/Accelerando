@@ -1,8 +1,9 @@
 "use client";
 
+import { useCallback, useEffect, useRef, useState } from "react";
+
 import { getPiecePlaybackTime, getYouTubeSeekTime } from "@/lib/youtube";
 import { usePlayerStore } from "@/stores/player-store";
-import { useCallback, useEffect, useRef, useState } from "react";
 
 const YOUTUBE_IFRAME_API_URL = "https://www.youtube.com/iframe_api";
 const POLL_INTERVAL_MS = 250;

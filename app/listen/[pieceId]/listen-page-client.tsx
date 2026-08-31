@@ -7,7 +7,6 @@ import { AnnotationTimeline } from "@/components/annotation-timeline";
 import { AudioPlayer } from "@/components/audio-player";
 import { PlaybackControls } from "@/components/playback-controls";
 import { useAudioPlayer } from "@/hooks/use-audio-player";
-import { getActiveAnnotation } from "@/lib/annotations";
 import { getAnnotationsForPiece } from "@/lib/fake-annotations";
 import { startPieceSession } from "@/lib/player";
 import type { Piece } from "@/types";
@@ -23,10 +22,6 @@ export function ListenPageClient({ piece }: ListenPageClientProps) {
 
   const player = useAudioPlayer(piece);
   const annotations = getAnnotationsForPiece(piece.id);
-  const activeAnnotation = getActiveAnnotation(
-    annotations,
-    player.currentTime,
-  );
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-6 md:p-10">
@@ -43,7 +38,7 @@ export function ListenPageClient({ piece }: ListenPageClientProps) {
 
       <AudioPlayer containerRef={player.containerRef} isReady={player.isReady} />
 
-      <AnnotationCard annotation={activeAnnotation} />
+      <AnnotationCard annotations={annotations} />
 
       <AnnotationTimeline
         annotations={annotations}
@@ -55,11 +50,8 @@ export function ListenPageClient({ piece }: ListenPageClientProps) {
       <PlaybackControls
         isReady={player.isReady}
         isPlaying={player.isPlaying}
-        currentTime={player.currentTime}
-        duration={player.duration}
         onPlay={player.play}
         onPause={player.pause}
-        onSeek={player.seekTo}
       />
     </div>
   );

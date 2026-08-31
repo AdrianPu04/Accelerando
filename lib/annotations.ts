@@ -11,3 +11,14 @@ export function getActiveAnnotation(
       .sort((a, b) => b.timestampSeconds - a.timestampSeconds)[0] ?? null
   );
 }
+
+export function getAnnotationById(
+  annotations: Annotation[],
+  annotationId: string | null,
+): Annotation | null {
+  if (!annotationId) {
+    return null;
+  }
+
+  return annotations.find((annotation) => annotation.id === annotationId) ?? null;
+}

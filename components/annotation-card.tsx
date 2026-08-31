@@ -1,3 +1,5 @@
+"use client";
+
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -5,17 +7,24 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { getAnnotationById } from "@/lib/annotations";
 import { formatTime } from "@/lib/format-time";
+import { usePlayerStore } from "@/stores/player-store";
 import type { Annotation } from "@/types";
 
 interface AnnotationCardProps {
-  annotation: Annotation | null;
+  annotations: Annotation[];
 }
 
-export function AnnotationCard({ annotation }: AnnotationCardProps) {
+export function AnnotationCard({ annotations }: AnnotationCardProps) {
+  const activeAnnotationId = usePlayerStore(
+    (state) => state.activeAnnotationId,
+  );
+  const annotation = getAnnotationById(annotations, activeAnnotationId);
+
   if (!annotation) {
     return (
-      <Card>
+      <Card aria-live="polite">
         <CardContent className="text-muted-foreground">
           Play the recording — annotations will appear as you listen.
         </CardContent>
@@ -24,7 +33,7 @@ export function AnnotationCard({ annotation }: AnnotationCardProps) {
   }
 
   return (
-    <Card>
+    <Card aria-live="polite">
       <CardHeader>
         <Badge variant="secondary">{annotation.category}</Badge>
         <CardTitle>{annotation.label}</CardTitle>

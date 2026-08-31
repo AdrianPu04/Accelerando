@@ -1,10 +1,23 @@
 "use client";
 
+import type { RefObject } from "react";
+
 import { useYouTubePlayer } from "@/hooks/use-youtube-player";
 import { usePlayerStore } from "@/stores/player-store";
 import type { Piece } from "@/types";
 
-export function useAudioPlayer(piece: Piece) {
+export interface AudioPlayerControls {
+  containerRef: RefObject<HTMLDivElement | null>;
+  isReady: boolean;
+  currentTime: number;
+  duration: number;
+  isPlaying: boolean;
+  seekTo: (pieceTimestampSeconds: number) => void;
+  play: () => void;
+  pause: () => void;
+}
+
+export function useAudioPlayer(piece: Piece): AudioPlayerControls {
   const { containerRef, isReady, seekTo, play, pause } = useYouTubePlayer({
     videoId: piece.youtubeVideoId,
     startOffsetSeconds: piece.startOffsetSeconds,

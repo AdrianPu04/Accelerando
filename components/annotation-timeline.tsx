@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 
 import { Slider } from "@/components/ui/slider";
 import { getActiveAnnotation } from "@/lib/annotations";
 import { formatTime } from "@/lib/format-time";
+import { cn } from "@/lib/utils";
 import { usePlayerStore } from "@/stores/player-store";
 import type { Annotation } from "@/types";
-import { cn } from "@/lib/utils";
 
 interface AnnotationTimelineProps {
   annotations: Annotation[];
@@ -22,23 +22,17 @@ export function AnnotationTimeline({
   duration,
   onSeek,
 }: AnnotationTimelineProps) {
-  const activeAnnotationId = usePlayerStore((state) => state.activeAnnotationId);
+  const activeAnnotationId = usePlayerStore(
+    (state) => state.activeAnnotationId,
+  );
   const setActiveAnnotationId = usePlayerStore(
     (state) => state.setActiveAnnotationId,
   );
 
-  const sortedAnnotations = useMemo(
-    () =>
-      [...annotations].sort(
-        (a, b) => a.timestampSeconds - b.timestampSeconds,
-      ),
-    [annotations],
-  );
-
   useEffect(() => {
-    const active = getActiveAnnotation(sortedAnnotations, currentTime);
+    const active = getActiveAnnotation(annotations, currentTime);
     setActiveAnnotationId(active?.id ?? null);
-  }, [sortedAnnotations, currentTime, setActiveAnnotationId]);
+  }, [annotations, currentTime, setActiveAnnotationId]);
 
   const sliderMax = duration > 0 ? duration : 1;
 
@@ -51,7 +45,7 @@ export function AnnotationTimeline({
 
       <div className="relative px-1 pt-4 pb-2">
         <div className="pointer-events-none absolute inset-x-1 top-0 flex h-4 items-end">
-          {sortedAnnotations.map((annotation) => {
+          {annotations.map((annotation) => {
             const position =
               duration > 0
                 ? (annotation.timestampSeconds / sliderMax) * 100
