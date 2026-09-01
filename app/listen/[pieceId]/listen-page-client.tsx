@@ -1,6 +1,8 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
+import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useRef } from "react";
 
 import { AnnotationCard } from "@/components/annotation-card";
@@ -11,7 +13,7 @@ import { PlaybackControls } from "@/components/playback-controls";
 import { RecommendationCard } from "@/components/recommendation-card";
 import { RecommendationReveal } from "@/components/recommendation-reveal";
 import { ReflectionForm } from "@/components/reflection-form";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { useAnnotations } from "@/hooks/use-annotations";
 import { useAudioPlayer } from "@/hooks/use-audio-player";
 import { useEditableAnnotations } from "@/hooks/use-editable-annotations";
@@ -21,6 +23,7 @@ import { useReflectionPrompt } from "@/hooks/use-reflection-prompt";
 import { clearCachedAnnotations } from "@/lib/annotation-cache";
 import { saveRecommendationForSession } from "@/lib/listening-storage";
 import { startPieceSession, prepareRecommendedPiece } from "@/lib/player";
+import { cn } from "@/lib/utils";
 import type { Piece, Reflection } from "@/types";
 
 interface ListenPageClientProps {
@@ -130,6 +133,18 @@ export function ListenPageClient({ piece }: ListenPageClientProps) {
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-6 md:p-10">
+      <Link
+        href="/"
+        onClick={() => player.pause()}
+        className={cn(
+          buttonVariants({ variant: "ghost", size: "xs" }),
+          "-ml-3 w-fit",
+        )}
+      >
+        <ArrowLeft />
+        Home
+      </Link>
+
       <header className="space-y-1">
         <p className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
           {piece.era}
