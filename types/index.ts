@@ -26,3 +26,18 @@ export interface Annotation {
   note: string;
   category: AnnotationCategory;
 }
+
+export interface Reflection {
+  id: string;
+  pieceId: string;
+  text: string;
+  createdAt: string;
+}
+
+export interface ListeningSession {
+  id: string;
+  pieceId: string;
+  reflectionId?: string;
+  recommendationId?: string;
+  listenedAt: string;
+}

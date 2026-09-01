@@ -8,13 +8,16 @@ import { AnnotationReview } from "@/components/annotation-review";
 import { AnnotationTimeline } from "@/components/annotation-timeline";
 import { AudioPlayer } from "@/components/audio-player";
 import { PlaybackControls } from "@/components/playback-controls";
+import { ReflectionForm } from "@/components/reflection-form";
 import { Button } from "@/components/ui/button";
 import { useAnnotations } from "@/hooks/use-annotations";
 import { useAudioPlayer } from "@/hooks/use-audio-player";
 import { useEditableAnnotations } from "@/hooks/use-editable-annotations";
+import { useListeningSession } from "@/hooks/use-listening-session";
+import { useReflectionPrompt } from "@/hooks/use-reflection-prompt";
 import { clearCachedAnnotations } from "@/lib/annotation-cache";
 import { startPieceSession } from "@/lib/player";
-import type { Piece } from "@/types";
+import type { Piece, Reflection } from "@/types";
 
 interface ListenPageClientProps {
   piece: Piece;
@@ -28,8 +31,14 @@ export function ListenPageClient({ piece }: ListenPageClientProps) {
   }, [piece.id]);
 
   const player = useAudioPlayer(piece);
+  const { reflection, persistReflection } = useListeningSession(piece.id);
+  const { isOpen: isReflectionOpen, openReflection } = useReflectionPrompt(
+    player.currentTime,
+    player.duration,
+  );
+
   const {
-    data: fetchedAnnotations = [],
+    data: fetchedAnnotations,
     isPending,
     isError,
     error,
@@ -46,6 +55,15 @@ export function ListenPageClient({ piece }: ListenPageClientProps) {
       queryKey: ["annotations", piece.id],
     });
     await refetch();
+  };
+
+  const handleDoneListening = () => {
+    player.pause();
+    openReflection();
+  };
+
+  const handleReflectionSubmit = (nextReflection: Reflection) => {
+    persistReflection(nextReflection);
   };
 
   return (
@@ -113,12 +131,33 @@ export function ListenPageClient({ piece }: ListenPageClientProps) {
         </>
       ) : null}
 
-      <PlaybackControls
-        isReady={player.isReady}
-        isPlaying={player.isPlaying}
-        onPlay={player.play}
-        onPause={player.pause}
-      />
+      <div className="flex flex-wrap items-center gap-3">
+        <PlaybackControls
+          isReady={player.isReady}
+          isPlaying={player.isPlaying}
+          onPlay={player.play}
+          onPause={player.pause}
+        />
+
+        {player.isReady && !isReflectionOpen && !reflection ? (
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={handleDoneListening}
+          >
+            Done listening
+          </Button>
+        ) : null}
+      </div>
+
+      {isReflectionOpen || reflection ? (
+        <ReflectionForm
+          pieceId={piece.id}
+          submittedReflection={reflection}
+          onSubmit={handleReflectionSubmit}
+        />
+      ) : null}
     </div>
   );
 }
