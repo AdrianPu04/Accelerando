@@ -1,3 +1,4 @@
+import type { GeneratedAnnotation } from "@/lib/schemas/annotation";
 import type { Annotation } from "@/types";
 
 /** Latest annotation at or before the current playback time. */
@@ -21,4 +22,17 @@ export function getAnnotationById(
   }
 
   return annotations.find((annotation) => annotation.id === annotationId) ?? null;
+}
+
+export function toAnnotations(
+  pieceId: string,
+  generated: GeneratedAnnotation[],
+): Annotation[] {
+  return [...generated]
+    .sort((a, b) => a.timestampSeconds - b.timestampSeconds)
+    .map((annotation, index) => ({
+      id: `${pieceId}-gen-${index + 1}`,
+      pieceId,
+      ...annotation,
+    }));
 }
