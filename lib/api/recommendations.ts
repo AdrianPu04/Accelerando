@@ -14,7 +14,40 @@ function parseStreamLine(line: string): RecommendStreamEvent | null {
     return null;
   }
 
-  return JSON.parse(trimmed) as RecommendStreamEvent;
+  try {
+    return JSON.parse(trimmed) as RecommendStreamEvent;
+  } catch {
+    return null;
+  }
+}
+
+function handleStreamEvent(
+  event: RecommendStreamEvent,
+  handlers: {
+    onPiece: (piece: Piece) => void;
+    onDelta: (text: string) => void;
+    onDone: () => void;
+    onError: (message: string) => void;
+  },
+  state: { sawDone: boolean; sawError: boolean; receivedContent: boolean },
+): void {
+  switch (event.type) {
+    case "piece":
+      handlers.onPiece(event.piece);
+      break;
+    case "delta":
+      state.receivedContent = true;
+      handlers.onDelta(event.text);
+      break;
+    case "done":
+      state.sawDone = true;
+      handlers.onDone();
+      break;
+    case "error":
+      state.sawError = true;
+      handlers.onError(event.message);
+      break;
+  }
 }
 
 export async function streamRecommendation(
@@ -58,47 +91,59 @@ export async function streamRecommendation(
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
+  const state = { sawDone: false, sawError: false, receivedContent: false };
 
-  while (true) {
-    const { done, value } = await reader.read();
-
-    if (done) {
-      break;
+  const processLine = (line: string) => {
+    const event = parseStreamLine(line);
+    if (!event) {
+      return;
     }
 
-    buffer += decoder.decode(value, { stream: true });
-    const lines = buffer.split("\n");
-    buffer = lines.pop() ?? "";
+    handleStreamEvent(event, handlers, state);
+  };
 
-    for (const line of lines) {
-      const event = parseStreamLine(line);
-      if (!event) {
-        continue;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+
+      if (done) {
+        break;
       }
 
-      switch (event.type) {
-        case "piece":
-          handlers.onPiece(event.piece);
-          break;
-        case "delta":
-          handlers.onDelta(event.text);
-          break;
-        case "done":
-          handlers.onDone();
-          break;
-        case "error":
-          handlers.onError(event.message);
-          break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() ?? "";
+
+      for (const line of lines) {
+        processLine(line);
       }
     }
-  }
 
-  if (buffer.trim()) {
-    const event = parseStreamLine(buffer);
-    if (event?.type === "done") {
-      handlers.onDone();
-    } else if (event?.type === "error") {
-      handlers.onError(event.message);
+    if (buffer.trim()) {
+      processLine(buffer);
+    }
+
+    if (state.sawError) {
+      return;
+    }
+
+    if (!state.sawDone) {
+      if (state.receivedContent) {
+        handlers.onDone();
+      } else {
+        handlers.onError("Recommendation stream ended unexpectedly");
+      }
+    }
+  } catch (error) {
+    if (signal?.aborted) {
+      return;
+    }
+
+    const message =
+      error instanceof Error ? error.message : "Failed to read recommendation";
+
+    if (!state.sawError) {
+      handlers.onError(message);
     }
   }
 }

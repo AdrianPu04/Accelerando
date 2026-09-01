@@ -22,10 +22,13 @@ export function useRecommendation(
   const [status, setStatus] = useState<RecommendationStatus>("idle");
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
-  const startedForReflectionId = useRef<string | null>(null);
+  const annotationsSnapshotRef = useRef<Annotation[]>([]);
+  const fetchedForReflectionIdRef = useRef<string | null>(null);
+
+  const annotationsReady = annotations.length > 0;
 
   const runRecommendation = useCallback(
-    (activeReflection: Reflection) => {
+    (activeReflection: Reflection, snapshot: Annotation[]) => {
       setRecommendedPiece(null);
       setReasoning("");
       setError(null);
@@ -41,7 +44,7 @@ export function useRecommendation(
             text: activeReflection.text,
             createdAt: activeReflection.createdAt,
           },
-          annotations: annotations.map((annotation) => ({
+          annotations: snapshot.map((annotation) => ({
             timestampSeconds: annotation.timestampSeconds,
             label: annotation.label,
             note: annotation.note,
@@ -69,21 +72,30 @@ export function useRecommendation(
 
       return () => controller.abort();
     },
-    [annotations, pieceId],
+    [pieceId],
   );
 
   useEffect(() => {
-    if (!reflection || annotations.length === 0) {
+    if (!reflection || !annotationsReady) {
       return;
     }
 
-    if (startedForReflectionId.current === reflection.id && attempt === 0) {
+    const isRetry = attempt > 0;
+    const alreadyFetched =
+      fetchedForReflectionIdRef.current === reflection.id && !isRetry;
+
+    if (alreadyFetched) {
       return;
     }
 
-    startedForReflectionId.current = reflection.id;
-    return runRecommendation(reflection);
-  }, [annotations.length, attempt, reflection, runRecommendation]);
+    if (fetchedForReflectionIdRef.current !== reflection.id) {
+      annotationsSnapshotRef.current = [...annotations];
+    }
+
+    fetchedForReflectionIdRef.current = reflection.id;
+
+    return runRecommendation(reflection, annotationsSnapshotRef.current);
+  }, [annotationsReady, attempt, reflection, runRecommendation]);
 
   const retry = useCallback(() => {
     setAttempt((current) => current + 1);
