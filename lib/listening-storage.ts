@@ -39,6 +39,39 @@ function getSessions(): ListeningSession[] {
   return readJson<ListeningSession>(SESSIONS_KEY);
 }
 
+export function getAllSessions(): ListeningSession[] {
+  return getSessions();
+}
+
+export function getRecentRecommendations(limit = 5): Recommendation[] {
+  return [...getRecommendations()]
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    .slice(0, limit);
+}
+
+export function getInProgressSession(): ListeningSession | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  for (const session of getSessions()) {
+    if (session.reflectionId) {
+      continue;
+    }
+
+    const currentId = sessionStorage.getItem(currentSessionKey(session.pieceId));
+    if (currentId === session.id) {
+      return session;
+    }
+  }
+
+  return (
+    [...getSessions()]
+      .filter((session) => !session.reflectionId)
+      .sort((a, b) => b.listenedAt.localeCompare(a.listenedAt))[0] ?? null
+  );
+}
+
 function saveSessions(sessions: ListeningSession[]): void {
   writeJson(SESSIONS_KEY, sessions);
 }
