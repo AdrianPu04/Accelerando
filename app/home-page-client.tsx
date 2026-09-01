@@ -44,9 +44,20 @@ export function HomePageClient({ pieces }: HomePageClientProps) {
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 p-6 md:p-10">
       <header className="space-y-2">
-        <p className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
-          Guided listening
-        </p>
+        <div className="flex items-center justify-between gap-4">
+          <p className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
+            Guided listening
+          </p>
+          <Link
+            href="/history"
+            className={cn(
+              buttonVariants({ variant: "ghost", size: "sm" }),
+              "text-muted-foreground",
+            )}
+          >
+            History
+          </Link>
+        </div>
         <h1 className="font-heading text-4xl font-semibold">Accelerando</h1>
         <p className="max-w-xl text-muted-foreground">
           Listen with AI-annotated timelines, reflect on what you hear, and

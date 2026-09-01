@@ -50,3 +50,11 @@ export interface Recommendation {
   basedOn: string[];
   createdAt: string;
 }
+
+export interface SessionWithDetails {
+  session: ListeningSession;
+  piece: Piece | null;
+  reflection: Reflection | null;
+  recommendation: Recommendation | null;
+  isInProgress: boolean;
+}

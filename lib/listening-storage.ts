@@ -1,4 +1,11 @@
-import type { ListeningSession, Recommendation, Reflection } from "@/types";
+import type {
+  ListeningSession,
+  Piece,
+  Recommendation,
+  Reflection,
+  SessionWithDetails,
+} from "@/types";
+import { getPieceById } from "@/lib/pieces";
 
 const SESSIONS_KEY = "accelerando:listening-sessions";
 const REFLECTIONS_KEY = "accelerando:reflections";
@@ -146,6 +153,39 @@ export function beginListeningToPiece(pieceId: string): void {
 
 export function getSessionsForPiece(pieceId: string): ListeningSession[] {
   return getSessions().filter((session) => session.pieceId === pieceId);
+}
+
+function resolvePieceForSession(pieceId: string): Piece | null {
+  const curated = getPieceById(pieceId);
+  if (curated) {
+    return curated;
+  }
+
+  for (const recommendation of getRecommendations()) {
+    if (recommendation.toPiece.id === pieceId) {
+      return recommendation.toPiece;
+    }
+  }
+
+  return null;
+}
+
+export function getSessionHistory(): SessionWithDetails[] {
+  const inProgress = getInProgressSession();
+
+  return getSessions()
+    .map((session) => ({
+      session,
+      piece: resolvePieceForSession(session.pieceId),
+      reflection: session.reflectionId
+        ? getReflection(session.reflectionId)
+        : null,
+      recommendation: session.recommendationId
+        ? getRecommendation(session.recommendationId)
+        : null,
+      isInProgress: inProgress?.id === session.id,
+    }))
+    .sort((a, b) => b.session.listenedAt.localeCompare(a.session.listenedAt));
 }
 
 export function getOrCreateCurrentSession(pieceId: string): ListeningSession {
