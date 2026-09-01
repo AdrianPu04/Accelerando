@@ -9,7 +9,15 @@ import { generateAnnotationsRequestSchema } from "@/lib/schemas/annotation";
 
 export async function POST(request: Request) {
   try {
-    const body = generateAnnotationsRequestSchema.parse(await request.json());
+    let json: unknown;
+
+    try {
+      json = await request.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    }
+
+    const body = generateAnnotationsRequestSchema.parse(json);
     const piece = getPieceById(body.pieceId);
 
     if (!piece) {

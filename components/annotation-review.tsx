@@ -10,6 +10,7 @@ import {
   ANNOTATION_CATEGORIES,
   type AnnotationUpdate,
 } from "@/hooks/use-editable-annotations";
+import { annotationCategorySchema } from "@/lib/schemas/annotation";
 import { formatTime } from "@/lib/format-time";
 import { cn } from "@/lib/utils";
 import type { Annotation } from "@/types";
@@ -198,12 +199,20 @@ export function AnnotationReview({
                       <select
                         className={cn(fieldClassName, "cursor-pointer")}
                         value={draft.category ?? "other"}
-                        onChange={(event) =>
+                        onChange={(event) => {
+                          const parsed = annotationCategorySchema.safeParse(
+                            event.target.value,
+                          );
+
+                          if (!parsed.success) {
+                            return;
+                          }
+
                           setDraft((current) => ({
                             ...current,
-                            category: event.target.value as Annotation["category"],
-                          }))
-                        }
+                            category: parsed.data,
+                          }));
+                        }}
                       >
                         {ANNOTATION_CATEGORIES.map((category) => (
                           <option key={category} value={category}>

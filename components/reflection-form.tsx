@@ -12,6 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { REFLECTION_MAX_LENGTH } from "@/lib/schemas/recommendation";
 import type { Reflection } from "@/types";
 
 interface ReflectionFormProps {
@@ -49,7 +50,7 @@ export function ReflectionForm({
     event.preventDefault();
 
     const trimmed = text.trim();
-    if (!trimmed) {
+    if (!trimmed || trimmed.length > REFLECTION_MAX_LENGTH) {
       return;
     }
 
@@ -80,9 +81,13 @@ export function ReflectionForm({
             id="reflection-text"
             placeholder="A modulation, a timbre, a phrase that stuck with you…"
             value={text}
+            maxLength={REFLECTION_MAX_LENGTH}
             onChange={(event) => setText(event.target.value)}
             rows={4}
           />
+          <p className="text-xs text-muted-foreground tabular-nums">
+            {text.length}/{REFLECTION_MAX_LENGTH}
+          </p>
         </CardContent>
 
         <CardFooter>

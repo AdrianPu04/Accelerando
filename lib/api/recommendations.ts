@@ -1,12 +1,6 @@
+import { recommendStreamEventSchema } from "@/lib/schemas/recommendation";
+import type { RecommendNextRequest, RecommendStreamEvent } from "@/lib/schemas/recommendation";
 import type { Piece } from "@/types";
-
-import type { RecommendNextRequest } from "@/lib/schemas/recommendation";
-
-export type RecommendStreamEvent =
-  | { type: "piece"; piece: Piece; provider: string }
-  | { type: "delta"; text: string }
-  | { type: "done"; provider: string }
-  | { type: "error"; message: string };
 
 function parseStreamLine(line: string): RecommendStreamEvent | null {
   const trimmed = line.trim();
@@ -15,7 +9,9 @@ function parseStreamLine(line: string): RecommendStreamEvent | null {
   }
 
   try {
-    return JSON.parse(trimmed) as RecommendStreamEvent;
+    const json: unknown = JSON.parse(trimmed);
+    const parsed = recommendStreamEventSchema.safeParse(json);
+    return parsed.success ? parsed.data : null;
   } catch {
     return null;
   }

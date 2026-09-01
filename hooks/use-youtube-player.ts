@@ -7,26 +7,59 @@ import { usePlayerStore } from "@/stores/player-store";
 
 const YOUTUBE_IFRAME_API_URL = "https://www.youtube.com/iframe_api";
 const POLL_INTERVAL_MS = 250;
+const API_READY_POLL_MS = 50;
+const API_READY_TIMEOUT_MS = 10_000;
 
 let youtubeApiPromise: Promise<void> | null = null;
+
+function isYouTubeApiReady(): boolean {
+  return typeof window !== "undefined" && Boolean(window.YT?.Player);
+}
 
 function loadYouTubeIframeApi(): Promise<void> {
   if (typeof window === "undefined") {
     return Promise.resolve();
   }
 
-  if (window.YT?.Player) {
+  if (isYouTubeApiReady()) {
     return Promise.resolve();
   }
 
   if (!youtubeApiPromise) {
-    youtubeApiPromise = new Promise((resolve) => {
+    youtubeApiPromise = new Promise((resolve, reject) => {
+      const finish = () => {
+        if (isYouTubeApiReady()) {
+          resolve();
+          return true;
+        }
+
+        return false;
+      };
+
+      if (finish()) {
+        return;
+      }
+
       const previousReady = window.onYouTubeIframeAPIReady;
 
       window.onYouTubeIframeAPIReady = () => {
         previousReady?.();
-        resolve();
+        finish();
       };
+
+      const pollId = window.setInterval(() => {
+        if (finish()) {
+          window.clearInterval(pollId);
+        }
+      }, API_READY_POLL_MS);
+
+      window.setTimeout(() => {
+        window.clearInterval(pollId);
+        if (!isYouTubeApiReady()) {
+          youtubeApiPromise = null;
+          reject(new Error("YouTube IFrame API failed to load"));
+        }
+      }, API_READY_TIMEOUT_MS);
 
       if (
         !document.querySelector(`script[src="${YOUTUBE_IFRAME_API_URL}"]`)
@@ -95,7 +128,11 @@ export function useYouTubePlayer({
     let cancelled = false;
 
     async function initPlayer() {
-      await loadYouTubeIframeApi();
+      try {
+        await loadYouTubeIframeApi();
+      } catch {
+        return;
+      }
 
       if (cancelled || !containerRef.current) {
         return;
@@ -108,11 +145,17 @@ export function useYouTubePlayer({
           controls: 1,
           rel: 0,
           modestbranding: 1,
+          start: startOffsetSeconds > 0 ? startOffsetSeconds : undefined,
         },
         events: {
           onReady: (event) => {
             if (cancelled) {
               return;
+            }
+
+            if (startOffsetSeconds > 0) {
+              event.target.seekTo(startOffsetSeconds, true);
+              setCurrentTime(0);
             }
 
             setIsReady(true);

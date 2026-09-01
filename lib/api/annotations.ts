@@ -1,14 +1,5 @@
+import { generateAnnotationsApiResponseSchema } from "@/lib/schemas/annotation";
 import type { Annotation } from "@/types";
-
-interface GenerateAnnotationsResponse {
-  annotations: Annotation[];
-  provider?: string;
-}
-
-interface GenerateAnnotationsError {
-  error: string;
-  provider?: string;
-}
 
 export async function fetchAnnotations(pieceId: string): Promise<Annotation[]> {
   const response = await fetch("/api/generate-annotations", {
@@ -17,21 +8,31 @@ export async function fetchAnnotations(pieceId: string): Promise<Annotation[]> {
     body: JSON.stringify({ pieceId }),
   });
 
-  const data = (await response.json()) as
-    | GenerateAnnotationsResponse
-    | GenerateAnnotationsError;
+  let json: unknown;
 
-  if (!response.ok) {
-    throw new Error(
-      "error" in data && data.error
-        ? data.error
-        : "Failed to generate annotations",
-    );
+  try {
+    json = await response.json();
+  } catch {
+    throw new Error("Failed to generate annotations");
   }
 
-  if (!("annotations" in data) || !Array.isArray(data.annotations)) {
+  if (!response.ok) {
+    const error =
+      typeof json === "object" &&
+      json !== null &&
+      "error" in json &&
+      typeof json.error === "string"
+        ? json.error
+        : "Failed to generate annotations";
+
+    throw new Error(error);
+  }
+
+  const parsed = generateAnnotationsApiResponseSchema.safeParse(json);
+
+  if (!parsed.success) {
     throw new Error("Invalid annotation response");
   }
 
-  return data.annotations;
+  return parsed.data.annotations;
 }
