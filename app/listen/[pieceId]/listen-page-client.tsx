@@ -8,12 +8,15 @@ import { AnnotationReview } from "@/components/annotation-review";
 import { AnnotationTimeline } from "@/components/annotation-timeline";
 import { AudioPlayer } from "@/components/audio-player";
 import { PlaybackControls } from "@/components/playback-controls";
+import { RecommendationCard } from "@/components/recommendation-card";
+import { RecommendationReveal } from "@/components/recommendation-reveal";
 import { ReflectionForm } from "@/components/reflection-form";
 import { Button } from "@/components/ui/button";
 import { useAnnotations } from "@/hooks/use-annotations";
 import { useAudioPlayer } from "@/hooks/use-audio-player";
 import { useEditableAnnotations } from "@/hooks/use-editable-annotations";
 import { useListeningSession } from "@/hooks/use-listening-session";
+import { useRecommendation } from "@/hooks/use-recommendation";
 import { useReflectionPrompt } from "@/hooks/use-reflection-prompt";
 import { clearCachedAnnotations } from "@/lib/annotation-cache";
 import { startPieceSession } from "@/lib/player";
@@ -48,6 +51,16 @@ export function ListenPageClient({ piece }: ListenPageClientProps) {
 
   const { annotations, updateAnnotation, deleteAnnotation } =
     useEditableAnnotations(piece.id, fetchedAnnotations);
+
+  const {
+    recommendedPiece,
+    reasoning,
+    isLoading: isRecommendationLoading,
+    isStreaming: isRecommendationStreaming,
+    isComplete: isRecommendationComplete,
+    error: recommendationError,
+    retry: retryRecommendation,
+  } = useRecommendation(piece.id, reflection, annotations);
 
   const handleRegenerate = async () => {
     clearCachedAnnotations(piece.id);
@@ -157,6 +170,36 @@ export function ListenPageClient({ piece }: ListenPageClientProps) {
           submittedReflection={reflection}
           onSubmit={handleReflectionSubmit}
         />
+      ) : null}
+
+      {reflection && annotations.length > 0 ? (
+        <>
+          {recommendedPiece ? (
+            <RecommendationCard
+              piece={recommendedPiece}
+              reasoning={reasoning}
+              isComplete={isRecommendationComplete}
+            />
+          ) : null}
+
+          <RecommendationReveal
+            text={reasoning}
+            isLoading={isRecommendationLoading}
+            isStreaming={isRecommendationStreaming}
+            error={recommendationError}
+          />
+
+          {recommendationError ? (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={retryRecommendation}
+            >
+              Retry recommendation
+            </Button>
+          ) : null}
+        </>
       ) : null}
     </div>
   );
