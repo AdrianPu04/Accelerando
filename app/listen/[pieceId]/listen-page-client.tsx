@@ -1,7 +1,7 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 import { AnnotationCard } from "@/components/annotation-card";
 import { AnnotationReview } from "@/components/annotation-review";
@@ -19,7 +19,8 @@ import { useListeningSession } from "@/hooks/use-listening-session";
 import { useRecommendation } from "@/hooks/use-recommendation";
 import { useReflectionPrompt } from "@/hooks/use-reflection-prompt";
 import { clearCachedAnnotations } from "@/lib/annotation-cache";
-import { startPieceSession } from "@/lib/player";
+import { saveRecommendationForSession } from "@/lib/listening-storage";
+import { startPieceSession, prepareRecommendedPiece } from "@/lib/player";
 import type { Piece, Reflection } from "@/types";
 
 interface ListenPageClientProps {
@@ -34,7 +35,9 @@ export function ListenPageClient({ piece }: ListenPageClientProps) {
   }, [piece.id]);
 
   const player = useAudioPlayer(piece);
-  const { reflection, persistReflection } = useListeningSession(piece.id);
+  const { sessionId, reflection, persistReflection } = useListeningSession(
+    piece.id,
+  );
   const { isOpen: isReflectionOpen, openReflection } = useReflectionPrompt(
     player.currentTime,
     player.duration,
@@ -62,6 +65,48 @@ export function ListenPageClient({ piece }: ListenPageClientProps) {
     retry: retryRecommendation,
   } = useRecommendation(piece.id, reflection, annotations);
 
+  const savedRecommendationIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (
+      !isRecommendationComplete ||
+      !recommendedPiece ||
+      !reflection ||
+      !sessionId ||
+      !reasoning.trim()
+    ) {
+      return;
+    }
+
+    const recommendationId = `${sessionId}-recommendation`;
+
+    if (savedRecommendationIdRef.current === recommendationId) {
+      return;
+    }
+
+    savedRecommendationIdRef.current = recommendationId;
+
+    saveRecommendationForSession(sessionId, {
+      id: recommendationId,
+      fromPieceId: piece.id,
+      toPiece: recommendedPiece,
+      reasoning,
+      basedOn: [
+        reflection.id,
+        ...annotations.map((annotation) => annotation.id),
+      ],
+      createdAt: new Date().toISOString(),
+    });
+  }, [
+    annotations,
+    isRecommendationComplete,
+    piece.id,
+    reasoning,
+    recommendedPiece,
+    reflection,
+    sessionId,
+  ]);
+
   const handleRegenerate = async () => {
     clearCachedAnnotations(piece.id);
     await queryClient.invalidateQueries({
@@ -77,6 +122,10 @@ export function ListenPageClient({ piece }: ListenPageClientProps) {
 
   const handleReflectionSubmit = (nextReflection: Reflection) => {
     persistReflection(nextReflection);
+  };
+
+  const handleStartListening = (nextPieceId: string) => {
+    prepareRecommendedPiece(nextPieceId);
   };
 
   return (
@@ -179,6 +228,7 @@ export function ListenPageClient({ piece }: ListenPageClientProps) {
               piece={recommendedPiece}
               reasoning={reasoning}
               isComplete={isRecommendationComplete}
+              onStartListening={handleStartListening}
             />
           ) : null}
 

@@ -41,3 +41,12 @@ export interface ListeningSession {
   recommendationId?: string;
   listenedAt: string;
 }
+
+export interface Recommendation {
+  id: string;
+  fromPieceId: string;
+  toPiece: Piece;
+  reasoning: string;
+  basedOn: string[];
+  createdAt: string;
+}

@@ -1,7 +1,8 @@
-import type { ListeningSession, Reflection } from "@/types";
+import type { ListeningSession, Recommendation, Reflection } from "@/types";
 
 const SESSIONS_KEY = "accelerando:listening-sessions";
 const REFLECTIONS_KEY = "accelerando:reflections";
+const RECOMMENDATIONS_KEY = "accelerando:recommendations";
 const CURRENT_SESSION_PREFIX = "accelerando:current-session:";
 
 function currentSessionKey(pieceId: string): string {
@@ -50,6 +51,14 @@ function saveReflections(reflections: Reflection[]): void {
   writeJson(REFLECTIONS_KEY, reflections);
 }
 
+function getRecommendations(): Recommendation[] {
+  return readJson<Recommendation>(RECOMMENDATIONS_KEY);
+}
+
+function saveRecommendations(recommendations: Recommendation[]): void {
+  writeJson(RECOMMENDATIONS_KEY, recommendations);
+}
+
 export function getSession(sessionId: string): ListeningSession | null {
   return getSessions().find((session) => session.id === sessionId) ?? null;
 }
@@ -67,6 +76,39 @@ export function getReflectionForSession(
   }
 
   return getReflection(session.reflectionId);
+}
+
+export function getRecommendation(
+  recommendationId: string,
+): Recommendation | null {
+  return (
+    getRecommendations().find(
+      (recommendation) => recommendation.id === recommendationId,
+    ) ?? null
+  );
+}
+
+export function getRecommendationForSession(
+  sessionId: string,
+): Recommendation | null {
+  const session = getSession(sessionId);
+  if (!session?.recommendationId) {
+    return null;
+  }
+
+  return getRecommendation(session.recommendationId);
+}
+
+export function clearCurrentSession(pieceId: string): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  sessionStorage.removeItem(currentSessionKey(pieceId));
+}
+
+export function beginListeningToPiece(pieceId: string): void {
+  clearCurrentSession(pieceId);
 }
 
 export function getSessionsForPiece(pieceId: string): ListeningSession[] {
@@ -130,6 +172,38 @@ export function saveReflectionForSession(
   nextSessions[sessionIndex] = {
     ...nextSessions[sessionIndex],
     reflectionId: reflection.id,
+  };
+  saveSessions(nextSessions);
+}
+
+export function saveRecommendationForSession(
+  sessionId: string,
+  recommendation: Recommendation,
+): void {
+  const sessions = getSessions();
+  const sessionIndex = sessions.findIndex((session) => session.id === sessionId);
+
+  if (sessionIndex === -1) {
+    return;
+  }
+
+  const recommendations = getRecommendations();
+  const existingIndex = recommendations.findIndex(
+    (item) => item.id === recommendation.id,
+  );
+
+  if (existingIndex === -1) {
+    saveRecommendations([...recommendations, recommendation]);
+  } else {
+    const nextRecommendations = [...recommendations];
+    nextRecommendations[existingIndex] = recommendation;
+    saveRecommendations(nextRecommendations);
+  }
+
+  const nextSessions = [...sessions];
+  nextSessions[sessionIndex] = {
+    ...nextSessions[sessionIndex],
+    recommendationId: recommendation.id,
   };
   saveSessions(nextSessions);
 }

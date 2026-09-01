@@ -1,9 +1,9 @@
 "use client";
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { Badge } from "@/components/ui/badge";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -12,13 +12,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
 import type { Piece } from "@/types";
 
 interface RecommendationCardProps {
   piece: Piece;
   reasoning: string;
   isComplete: boolean;
+  onStartListening: (pieceId: string) => void;
 }
 
 function getReasoningSummary(reasoning: string): string {
@@ -38,8 +38,15 @@ export function RecommendationCard({
   piece,
   reasoning,
   isComplete,
+  onStartListening,
 }: RecommendationCardProps) {
+  const router = useRouter();
   const summary = getReasoningSummary(reasoning);
+
+  const handleStartListening = () => {
+    onStartListening(piece.id);
+    router.push(`/listen/${piece.id}`);
+  };
 
   return (
     <Card>
@@ -66,12 +73,9 @@ export function RecommendationCard({
 
       {isComplete ? (
         <CardFooter>
-          <Link
-            href={`/listen/${piece.id}`}
-            className={cn(buttonVariants({ size: "sm" }))}
-          >
+          <Button type="button" size="sm" onClick={handleStartListening}>
             Start listening
-          </Link>
+          </Button>
         </CardFooter>
       ) : (
         <CardFooter>
