@@ -7,7 +7,7 @@ import type { Piece } from "@/types";
 
 import { AnnotationProviderError, type AnnotationProvider } from "../types";
 
-const DEFAULT_MODEL = "gemini-2.0-flash";
+const DEFAULT_MODEL = "gemini-3.6-flash";
 
 export const geminiProvider: AnnotationProvider = {
   name: "gemini",
@@ -35,25 +35,28 @@ export const geminiProvider: AnnotationProvider = {
       },
     });
 
-    const result = await model.generateContent(user);
-    const text = result.response.text();
-
-    if (!text) {
-      throw new AnnotationProviderError(
-        "Gemini returned an empty response",
-        "gemini",
-        502,
-      );
-    }
-
     try {
+      const result = await model.generateContent(user);
+      const text = result.response.text();
+
+      if (!text) {
+        throw new AnnotationProviderError(
+          "Gemini returned an empty response",
+          "gemini",
+          502,
+        );
+      }
+
       return parseGenerateAnnotationsJson(text);
-    } catch {
-      throw new AnnotationProviderError(
-        "Failed to parse Gemini annotation response",
-        "gemini",
-        502,
-      );
+    } catch (error) {
+      if (error instanceof AnnotationProviderError) {
+        throw error;
+      }
+
+      const message =
+        error instanceof Error ? error.message : "Gemini request failed";
+
+      throw new AnnotationProviderError(message, "gemini", 502);
     }
   },
 };
