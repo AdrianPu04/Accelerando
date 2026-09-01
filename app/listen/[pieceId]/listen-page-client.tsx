@@ -1,14 +1,18 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 
 import { AnnotationCard } from "@/components/annotation-card";
+import { AnnotationReview } from "@/components/annotation-review";
 import { AnnotationTimeline } from "@/components/annotation-timeline";
 import { AudioPlayer } from "@/components/audio-player";
 import { PlaybackControls } from "@/components/playback-controls";
 import { Button } from "@/components/ui/button";
 import { useAnnotations } from "@/hooks/use-annotations";
 import { useAudioPlayer } from "@/hooks/use-audio-player";
+import { useEditableAnnotations } from "@/hooks/use-editable-annotations";
+import { clearCachedAnnotations } from "@/lib/annotation-cache";
 import { startPieceSession } from "@/lib/player";
 import type { Piece } from "@/types";
 
@@ -17,19 +21,32 @@ interface ListenPageClientProps {
 }
 
 export function ListenPageClient({ piece }: ListenPageClientProps) {
+  const queryClient = useQueryClient();
+
   useEffect(() => {
     startPieceSession(piece.id);
   }, [piece.id]);
 
   const player = useAudioPlayer(piece);
   const {
-    data: annotations = [],
+    data: fetchedAnnotations = [],
     isPending,
     isError,
     error,
     refetch,
     isFetching,
   } = useAnnotations(piece.id);
+
+  const { annotations, updateAnnotation, deleteAnnotation } =
+    useEditableAnnotations(piece.id, fetchedAnnotations);
+
+  const handleRegenerate = async () => {
+    clearCachedAnnotations(piece.id);
+    await queryClient.invalidateQueries({
+      queryKey: ["annotations", piece.id],
+    });
+    await refetch();
+  };
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-6 md:p-10">
@@ -76,6 +93,14 @@ export function ListenPageClient({ piece }: ListenPageClientProps) {
             Annotations are generated from musical knowledge of this work, not
             by analyzing the recording.
           </p>
+
+          <AnnotationReview
+            annotations={annotations}
+            onUpdate={updateAnnotation}
+            onDelete={deleteAnnotation}
+            onRegenerate={() => void handleRegenerate()}
+            isRegenerating={isFetching}
+          />
 
           <AnnotationCard annotations={annotations} />
 
