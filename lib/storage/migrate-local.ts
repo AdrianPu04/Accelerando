@@ -231,7 +231,7 @@ export async function migrateLocalStorageToSupabase(
 
     const { error: insertError } = await supabase.from("annotations").insert(
       annotations.map((annotation) => ({
-        id: annotation.id,
+        id: isUuid(annotation.id) ? annotation.id : crypto.randomUUID(),
         user_id: userId,
         piece_id: pieceId,
         timestamp_seconds: annotation.timestampSeconds,

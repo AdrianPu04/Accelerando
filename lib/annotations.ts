@@ -30,8 +30,8 @@ export function toAnnotations(
 ): Annotation[] {
   return [...generated]
     .sort((a, b) => a.timestampSeconds - b.timestampSeconds)
-    .map((annotation, index) => ({
-      id: `${pieceId}-gen-${index + 1}`,
+    .map((annotation) => ({
+      id: crypto.randomUUID(),
       pieceId,
       ...annotation,
     }));

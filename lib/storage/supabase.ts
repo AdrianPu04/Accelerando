@@ -396,7 +396,10 @@ export function createSupabaseStorage(
       const { error: insertError } = await supabase.from("annotations").insert(rows);
 
       if (insertError) {
-        throw insertError;
+        throw new Error(
+          `Failed to save annotations: ${insertError.message}`,
+          { cause: insertError },
+        );
       }
     },
 
