@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { PieceChip } from "@/components/piece-chip";
+import { useSupabase } from "@/components/supabase-provider";
 import { buttonVariants } from "@/components/ui/button";
 import {
   Card,
@@ -13,10 +14,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  getInProgressSession,
-  getRecentRecommendations,
-} from "@/lib/listening-storage";
 import { getPieceById } from "@/lib/pieces";
 import { cn } from "@/lib/utils";
 import type { ListeningSession, Piece, Recommendation } from "@/types";
@@ -26,6 +23,7 @@ interface HomePageClientProps {
 }
 
 export function HomePageClient({ pieces }: HomePageClientProps) {
+  const { storage, isReady } = useSupabase();
   const [inProgressSession, setInProgressSession] =
     useState<ListeningSession | null>(null);
   const [recentRecommendations, setRecentRecommendations] = useState<
@@ -33,9 +31,28 @@ export function HomePageClient({ pieces }: HomePageClientProps) {
   >([]);
 
   useEffect(() => {
-    setInProgressSession(getInProgressSession());
-    setRecentRecommendations(getRecentRecommendations(3));
-  }, []);
+    if (!isReady) {
+      return;
+    }
+
+    let cancelled = false;
+
+    void (async () => {
+      const [inProgress, recommendations] = await Promise.all([
+        storage.getInProgressSession(),
+        storage.getRecentRecommendations(3),
+      ]);
+
+      if (!cancelled) {
+        setInProgressSession(inProgress);
+        setRecentRecommendations(recommendations);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isReady, storage]);
 
   const inProgressPiece = inProgressSession
     ? getPieceById(inProgressSession.pieceId)

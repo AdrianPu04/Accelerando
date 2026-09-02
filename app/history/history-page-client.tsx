@@ -5,17 +5,32 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { SessionTimeline } from "@/components/session-timeline";
+import { useSupabase } from "@/components/supabase-provider";
 import { buttonVariants } from "@/components/ui/button";
-import { getSessionHistory } from "@/lib/listening-storage";
 import { cn } from "@/lib/utils";
 import type { SessionWithDetails } from "@/types";
 
 export function HistoryPageClient() {
+  const { storage, isReady } = useSupabase();
   const [sessions, setSessions] = useState<SessionWithDetails[]>([]);
 
   useEffect(() => {
-    setSessions(getSessionHistory());
-  }, []);
+    if (!isReady) {
+      return;
+    }
+
+    let cancelled = false;
+
+    void storage.getSessionHistory().then((history) => {
+      if (!cancelled) {
+        setSessions(history);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isReady, storage]);
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 p-6 md:p-10">

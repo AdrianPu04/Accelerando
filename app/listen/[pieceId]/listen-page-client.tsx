@@ -20,8 +20,8 @@ import { useEditableAnnotations } from "@/hooks/use-editable-annotations";
 import { useListeningSession } from "@/hooks/use-listening-session";
 import { useRecommendation } from "@/hooks/use-recommendation";
 import { useReflectionPrompt } from "@/hooks/use-reflection-prompt";
-import { clearCachedAnnotations } from "@/lib/annotation-cache";
-import { saveRecommendationForSession } from "@/lib/listening-storage";
+import { useSupabase } from "@/components/supabase-provider";
+import { createRecommendationId } from "@/lib/storage/ids";
 import { startPieceSession, prepareRecommendedPiece } from "@/lib/player";
 import { cn } from "@/lib/utils";
 import type { Piece, Reflection } from "@/types";
@@ -32,6 +32,7 @@ interface ListenPageClientProps {
 
 export function ListenPageClient({ piece }: ListenPageClientProps) {
   const queryClient = useQueryClient();
+  const { storage } = useSupabase();
 
   useEffect(() => {
     startPieceSession(piece.id);
@@ -68,7 +69,13 @@ export function ListenPageClient({ piece }: ListenPageClientProps) {
     retry: retryRecommendation,
   } = useRecommendation(piece.id, reflection, annotations);
 
-  const savedRecommendationIdRef = useRef<string | null>(null);
+  const savedForSessionRef = useRef<string | null>(null);
+  const recommendationIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    savedForSessionRef.current = null;
+    recommendationIdRef.current = null;
+  }, [sessionId]);
 
   useEffect(() => {
     if (
@@ -81,16 +88,18 @@ export function ListenPageClient({ piece }: ListenPageClientProps) {
       return;
     }
 
-    const recommendationId = `${sessionId}-recommendation`;
-
-    if (savedRecommendationIdRef.current === recommendationId) {
+    if (savedForSessionRef.current === sessionId) {
       return;
     }
 
-    savedRecommendationIdRef.current = recommendationId;
+    if (!recommendationIdRef.current) {
+      recommendationIdRef.current = createRecommendationId();
+    }
 
-    saveRecommendationForSession(sessionId, {
-      id: recommendationId,
+    savedForSessionRef.current = sessionId;
+
+    void storage.saveRecommendationForSession(sessionId, {
+      id: recommendationIdRef.current,
       fromPieceId: piece.id,
       toPiece: recommendedPiece,
       reasoning,
@@ -108,10 +117,11 @@ export function ListenPageClient({ piece }: ListenPageClientProps) {
     recommendedPiece,
     reflection,
     sessionId,
+    storage,
   ]);
 
   const handleRegenerate = async () => {
-    clearCachedAnnotations(piece.id);
+    await storage.clearCachedAnnotations(piece.id);
     await queryClient.invalidateQueries({
       queryKey: ["annotations", piece.id],
     });

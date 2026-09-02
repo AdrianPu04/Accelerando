@@ -3,6 +3,8 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
 
+import { SupabaseProvider } from "@/components/supabase-provider";
+
 interface ProvidersProps {
   children: ReactNode;
 }
@@ -21,6 +23,8 @@ export function Providers({ children }: ProvidersProps) {
   );
 
   return (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    <QueryClientProvider client={queryClient}>
+      <SupabaseProvider>{children}</SupabaseProvider>
+    </QueryClientProvider>
   );
 }

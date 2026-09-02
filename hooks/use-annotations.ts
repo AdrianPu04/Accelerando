@@ -2,24 +2,24 @@
 
 import { useQuery } from "@tanstack/react-query";
 
-import {
-  getCachedAnnotations,
-  setCachedAnnotations,
-} from "@/lib/annotation-cache";
+import { useSupabase } from "@/components/supabase-provider";
 import { fetchAnnotations } from "@/lib/api/annotations";
 
 export function useAnnotations(pieceId: string) {
+  const { storage, isReady } = useSupabase();
+
   return useQuery({
     queryKey: ["annotations", pieceId],
+    enabled: isReady,
     queryFn: async () => {
-      const cached = getCachedAnnotations(pieceId);
+      const cached = await storage.getCachedAnnotations(pieceId);
 
-      if (cached) {
+      if (cached && cached.length > 0) {
         return cached;
       }
 
       const annotations = await fetchAnnotations(pieceId);
-      setCachedAnnotations(pieceId, annotations);
+      await storage.setCachedAnnotations(pieceId, annotations);
       return annotations;
     },
     staleTime: Infinity,

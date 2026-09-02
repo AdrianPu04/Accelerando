@@ -3,7 +3,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { setCachedAnnotations } from "@/lib/annotation-cache";
+import { useSupabase } from "@/components/supabase-provider";
 import type { Annotation, AnnotationCategory } from "@/types";
 
 export type AnnotationUpdate = Partial<
@@ -29,6 +29,7 @@ export function useEditableAnnotations(
   pieceId: string,
   sourceAnnotations: Annotation[] | undefined,
 ) {
+  const { storage } = useSupabase();
   const queryClient = useQueryClient();
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
   const syncedFingerprintRef = useRef("");
@@ -57,10 +58,10 @@ export function useEditableAnnotations(
       const sorted = sortAnnotations(next);
       syncedFingerprintRef.current = getAnnotationsFingerprint(sorted);
       setAnnotations(sorted);
-      setCachedAnnotations(pieceId, sorted);
+      void storage.setCachedAnnotations(pieceId, sorted);
       queryClient.setQueryData(["annotations", pieceId], sorted);
     },
-    [pieceId, queryClient],
+    [pieceId, queryClient, storage],
   );
 
   const updateAnnotation = useCallback(

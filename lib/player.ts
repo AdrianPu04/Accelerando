@@ -1,7 +1,8 @@
 import { getPieceById } from "@/lib/pieces";
-import { beginListeningToPiece } from "@/lib/listening-storage";
 import { usePlayerStore } from "@/stores/player-store";
 import type { Piece } from "@/types";
+
+const CURRENT_SESSION_PREFIX = "accelerando:current-session:";
 
 export function startPieceSession(pieceId: string): Piece {
   const piece = getPieceById(pieceId);
@@ -19,5 +20,9 @@ export function startPieceSession(pieceId: string): Piece {
 
 /** Clear any in-progress session so the listen page starts fresh. */
 export function prepareRecommendedPiece(pieceId: string): void {
-  beginListeningToPiece(pieceId);
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  sessionStorage.removeItem(`${CURRENT_SESSION_PREFIX}${pieceId}`);
 }
