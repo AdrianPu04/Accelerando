@@ -3,12 +3,18 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { useSupabase } from "@/components/supabase-provider";
+import { formatStorageError, getErrorMessage } from "@/lib/user-messages";
 import type { Reflection } from "@/types";
 
 export function useListeningSession(pieceId: string) {
   const { storage, isReady } = useSupabase();
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [reflection, setReflection] = useState<Reflection | null>(null);
+  const [isSessionLoading, setIsSessionLoading] = useState(true);
+  const [isPersistingReflection, setIsPersistingReflection] = useState(false);
+  const [persistReflectionError, setPersistReflectionError] = useState<
+    string | null
+  >(null);
 
   useEffect(() => {
     if (!isReady) {
@@ -16,16 +22,23 @@ export function useListeningSession(pieceId: string) {
     }
 
     let cancelled = false;
+    setIsSessionLoading(true);
 
     void (async () => {
-      const session = await storage.getOrCreateCurrentSession(pieceId);
-      const existingReflection = await storage.getReflectionForSession(
-        session.id,
-      );
+      try {
+        const session = await storage.getOrCreateCurrentSession(pieceId);
+        const existingReflection = await storage.getReflectionForSession(
+          session.id,
+        );
 
-      if (!cancelled) {
-        setSessionId(session.id);
-        setReflection(existingReflection);
+        if (!cancelled) {
+          setSessionId(session.id);
+          setReflection(existingReflection);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsSessionLoading(false);
+        }
       }
     })();
 
@@ -35,8 +48,11 @@ export function useListeningSession(pieceId: string) {
   }, [isReady, pieceId, storage]);
 
   const persistReflection = useCallback(
-    (nextReflection: Reflection) => {
-      void (async () => {
+    async (nextReflection: Reflection) => {
+      setIsPersistingReflection(true);
+      setPersistReflectionError(null);
+
+      try {
         const activeSessionId =
           sessionId ?? (await storage.getOrCreateCurrentSession(pieceId)).id;
 
@@ -46,7 +62,13 @@ export function useListeningSession(pieceId: string) {
         );
         setSessionId(activeSessionId);
         setReflection(nextReflection);
-      })();
+      } catch (error) {
+        const message = formatStorageError(getErrorMessage(error)).description;
+        setPersistReflectionError(message);
+        throw error;
+      } finally {
+        setIsPersistingReflection(false);
+      }
     },
     [pieceId, sessionId, storage],
   );
@@ -55,6 +77,9 @@ export function useListeningSession(pieceId: string) {
     sessionId,
     reflection,
     persistReflection,
+    isSessionLoading,
+    isPersistingReflection,
+    persistReflectionError,
     isReady,
   };
 }

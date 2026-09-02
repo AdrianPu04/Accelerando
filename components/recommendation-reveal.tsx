@@ -7,6 +7,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { ErrorPanel, LoadingPanel } from "@/components/status-panel";
+import { formatAiError } from "@/lib/user-messages";
 
 interface RecommendationRevealProps {
   text: string;
@@ -22,23 +24,19 @@ export function RecommendationReveal({
   error = null,
 }: RecommendationRevealProps) {
   if (error) {
+    const formatted = formatAiError(error);
+
     return (
-      <Card>
-        <CardContent className="text-sm text-destructive">{error}</CardContent>
-      </Card>
+      <ErrorPanel title={formatted.title} description={formatted.description} />
     );
   }
 
   if (isLoading && !text) {
     return (
-      <Card aria-live="polite">
-        <CardHeader>
-          <CardTitle>Finding your next listen</CardTitle>
-          <CardDescription>
-            Considering your reflection and what you noticed…
-          </CardDescription>
-        </CardHeader>
-      </Card>
+      <LoadingPanel
+        title="Finding your next listen"
+        description="Considering your reflection and what you noticed…"
+      />
     );
   }
 

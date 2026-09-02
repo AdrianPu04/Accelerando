@@ -1,6 +1,7 @@
 import { getAuthHeaders } from "@/lib/api/auth";
 import { recommendStreamEventSchema } from "@/lib/schemas/recommendation";
 import type { RecommendNextRequest, RecommendStreamEvent } from "@/lib/schemas/recommendation";
+import { formatAiError } from "@/lib/user-messages";
 import type { Piece } from "@/types";
 
 function parseStreamLine(line: string): RecommendStreamEvent | null {
@@ -42,7 +43,7 @@ function handleStreamEvent(
       break;
     case "error":
       state.sawError = true;
-      handlers.onError(event.message);
+      handlers.onError(formatAiError(event.message).description);
       break;
   }
 }
@@ -77,7 +78,7 @@ export async function streamRecommendation(
       // Response was not JSON.
     }
 
-    handlers.onError(message);
+    handlers.onError(formatAiError(message).description);
     return;
   }
 

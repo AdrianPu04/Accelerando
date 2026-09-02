@@ -12,6 +12,7 @@ import {
 } from "recharts";
 
 import { PieceChip } from "@/components/piece-chip";
+import { EmptyPanel } from "@/components/status-panel";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import {
@@ -242,20 +243,15 @@ function SessionEntry({
 export function SessionTimeline({ sessions }: SessionTimelineProps) {
   if (sessions.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>No listening history yet</CardTitle>
-          <CardDescription>
-            Start a piece, reflect on what you hear, and your journey will
-            appear here — piece by piece, with the reasoning that connects them.
-          </CardDescription>
-        </CardHeader>
-        <CardFooter>
+      <EmptyPanel
+        title="No listening history yet"
+        description="Start a piece, reflect on what you hear, and your journey will appear here — piece by piece, with the reasoning that connects them."
+        action={
           <Link href="/" className={cn(buttonVariants({ size: "sm" }))}>
             Start listening
           </Link>
-        </CardFooter>
-      </Card>
+        }
+      />
     );
   }
 

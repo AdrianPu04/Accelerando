@@ -1,5 +1,6 @@
 import { getAuthHeaders } from "@/lib/api/auth";
 import { generateAnnotationsApiResponseSchema } from "@/lib/schemas/annotation";
+import { formatAiError } from "@/lib/user-messages";
 import type { Annotation } from "@/types";
 
 export async function fetchAnnotations(pieceId: string): Promise<Annotation[]> {
@@ -19,7 +20,7 @@ export async function fetchAnnotations(pieceId: string): Promise<Annotation[]> {
   }
 
   if (!response.ok) {
-    const error =
+    const raw =
       typeof json === "object" &&
       json !== null &&
       "error" in json &&
@@ -27,7 +28,7 @@ export async function fetchAnnotations(pieceId: string): Promise<Annotation[]> {
         ? json.error
         : "Failed to generate annotations";
 
-    throw new Error(error);
+    throw new Error(formatAiError(raw).description);
   }
 
   const parsed = generateAnnotationsApiResponseSchema.safeParse(json);

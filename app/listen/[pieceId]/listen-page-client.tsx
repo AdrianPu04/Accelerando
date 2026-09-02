@@ -3,7 +3,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { AnnotationCard } from "@/components/annotation-card";
 import { AnnotationReview } from "@/components/annotation-review";
@@ -13,6 +13,11 @@ import { PlaybackControls } from "@/components/playback-controls";
 import { RecommendationCard } from "@/components/recommendation-card";
 import { RecommendationReveal } from "@/components/recommendation-reveal";
 import { ReflectionForm } from "@/components/reflection-form";
+import {
+  EmptyPanel,
+  ErrorPanel,
+  LoadingPanel,
+} from "@/components/status-panel";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useAnnotations } from "@/hooks/use-annotations";
 import { useAudioPlayer } from "@/hooks/use-audio-player";
@@ -23,6 +28,11 @@ import { useReflectionPrompt } from "@/hooks/use-reflection-prompt";
 import { useSupabase } from "@/components/supabase-provider";
 import { createRecommendationId } from "@/lib/storage/ids";
 import { startPieceSession, prepareRecommendedPiece } from "@/lib/player";
+import {
+  formatAiError,
+  formatStorageError,
+  getErrorMessage,
+} from "@/lib/user-messages";
 import { cn } from "@/lib/utils";
 import type { Piece, Reflection } from "@/types";
 
@@ -33,15 +43,22 @@ interface ListenPageClientProps {
 export function ListenPageClient({ piece }: ListenPageClientProps) {
   const queryClient = useQueryClient();
   const { storage } = useSupabase();
+  const [recommendationSaveError, setRecommendationSaveError] = useState<
+    string | null
+  >(null);
 
   useEffect(() => {
     startPieceSession(piece.id);
   }, [piece.id]);
 
   const player = useAudioPlayer(piece);
-  const { sessionId, reflection, persistReflection } = useListeningSession(
-    piece.id,
-  );
+  const {
+    sessionId,
+    reflection,
+    persistReflection,
+    isPersistingReflection,
+    persistReflectionError,
+  } = useListeningSession(piece.id);
   const { isOpen: isReflectionOpen, openReflection } = useReflectionPrompt(
     player.currentTime,
     player.duration,
@@ -49,14 +66,14 @@ export function ListenPageClient({ piece }: ListenPageClientProps) {
 
   const {
     data: fetchedAnnotations,
-    isPending,
-    isError,
-    error,
+    isPending: isAnnotationsPending,
+    isError: isAnnotationsError,
+    error: annotationsError,
     refetch,
-    isFetching,
+    isFetching: isAnnotationsFetching,
   } = useAnnotations(piece.id);
 
-  const { annotations, updateAnnotation, deleteAnnotation } =
+  const { annotations, updateAnnotation, deleteAnnotation, saveError } =
     useEditableAnnotations(piece.id, fetchedAnnotations);
 
   const {
@@ -75,6 +92,7 @@ export function ListenPageClient({ piece }: ListenPageClientProps) {
   useEffect(() => {
     savedForSessionRef.current = null;
     recommendationIdRef.current = null;
+    setRecommendationSaveError(null);
   }, [sessionId]);
 
   useEffect(() => {
@@ -97,18 +115,26 @@ export function ListenPageClient({ piece }: ListenPageClientProps) {
     }
 
     savedForSessionRef.current = sessionId;
+    setRecommendationSaveError(null);
 
-    void storage.saveRecommendationForSession(sessionId, {
-      id: recommendationIdRef.current,
-      fromPieceId: piece.id,
-      toPiece: recommendedPiece,
-      reasoning,
-      basedOn: [
-        reflection.id,
-        ...annotations.map((annotation) => annotation.id),
-      ],
-      createdAt: new Date().toISOString(),
-    });
+    void storage
+      .saveRecommendationForSession(sessionId, {
+        id: recommendationIdRef.current,
+        fromPieceId: piece.id,
+        toPiece: recommendedPiece,
+        reasoning,
+        basedOn: [
+          reflection.id,
+          ...annotations.map((annotation) => annotation.id),
+        ],
+        createdAt: new Date().toISOString(),
+      })
+      .catch((error) => {
+        savedForSessionRef.current = null;
+        setRecommendationSaveError(
+          formatStorageError(getErrorMessage(error)).description,
+        );
+      });
   }, [
     annotations,
     isRecommendationComplete,
@@ -133,13 +159,26 @@ export function ListenPageClient({ piece }: ListenPageClientProps) {
     openReflection();
   };
 
-  const handleReflectionSubmit = (nextReflection: Reflection) => {
-    persistReflection(nextReflection);
+  const handleReflectionSubmit = async (nextReflection: Reflection) => {
+    await persistReflection(nextReflection);
   };
 
   const handleStartListening = (nextPieceId: string) => {
     prepareRecommendedPiece(nextPieceId);
   };
+
+  const annotationErrorMessage = isAnnotationsError
+    ? formatAiError(
+        annotationsError instanceof Error
+          ? annotationsError.message
+          : "Could not generate annotations.",
+      )
+    : null;
+
+  const showAnnotationLoading =
+    isAnnotationsPending && !isAnnotationsError && annotations.length === 0;
+  const showAnnotationRegenerating =
+    isAnnotationsFetching && annotations.length > 0;
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-6 md:p-10">
@@ -168,31 +207,36 @@ export function ListenPageClient({ piece }: ListenPageClientProps) {
 
       <AudioPlayer containerRef={player.containerRef} isReady={player.isReady} />
 
-      {isPending && isFetching ? (
-        <p className="text-sm text-muted-foreground">
-          Generating annotations…
-        </p>
+      {showAnnotationLoading ? (
+        <LoadingPanel
+          title="Generating annotations"
+          description="Building a guided timeline from musical knowledge of this work…"
+        />
       ) : null}
 
-      {isError ? (
-        <div className="flex flex-col gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-4">
-          <p className="text-sm text-destructive">
-            {error instanceof Error
-              ? error.message
-              : "Could not generate annotations."}
-          </p>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            onClick={() => void refetch()}
-          >
-            Retry
-          </Button>
-        </div>
+      {showAnnotationRegenerating ? (
+        <LoadingPanel
+          title="Regenerating annotations"
+          description="Creating a fresh set of notes for this recording…"
+        />
       ) : null}
 
-      {!isPending && !isError && annotations.length > 0 ? (
+      {annotationErrorMessage ? (
+        <ErrorPanel
+          title={annotationErrorMessage.title}
+          description={annotationErrorMessage.description}
+          onRetry={() => void refetch()}
+        />
+      ) : null}
+
+      {saveError ? (
+        <ErrorPanel
+          title="Could not save annotation edits"
+          description={saveError}
+        />
+      ) : null}
+
+      {!isAnnotationsPending && !isAnnotationsError && annotations.length > 0 ? (
         <>
           <p className="text-xs text-muted-foreground">
             Annotations are generated from musical knowledge of this work, not
@@ -204,7 +248,7 @@ export function ListenPageClient({ piece }: ListenPageClientProps) {
             onUpdate={updateAnnotation}
             onDelete={deleteAnnotation}
             onRegenerate={() => void handleRegenerate()}
-            isRegenerating={isFetching}
+            isRegenerating={isAnnotationsFetching}
           />
 
           <AnnotationCard annotations={annotations} />
@@ -216,6 +260,26 @@ export function ListenPageClient({ piece }: ListenPageClientProps) {
             onSeek={player.seekTo}
           />
         </>
+      ) : null}
+
+      {!isAnnotationsPending &&
+      !isAnnotationsError &&
+      annotations.length === 0 &&
+      (reflection || isReflectionOpen) ? (
+        <EmptyPanel
+          title="No annotations available"
+          description="Recommendations need at least one annotation. Regenerate annotations or reload the page to try again."
+          action={
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => void refetch()}
+            >
+              Generate annotations
+            </Button>
+          }
+        />
       ) : null}
 
       <div className="flex flex-wrap items-center gap-3">
@@ -243,6 +307,8 @@ export function ListenPageClient({ piece }: ListenPageClientProps) {
           pieceId={piece.id}
           submittedReflection={reflection}
           onSubmit={handleReflectionSubmit}
+          isSaving={isPersistingReflection}
+          saveError={persistReflectionError}
         />
       ) : null}
 
@@ -273,6 +339,13 @@ export function ListenPageClient({ piece }: ListenPageClientProps) {
             >
               Retry recommendation
             </Button>
+          ) : null}
+
+          {recommendationSaveError ? (
+            <ErrorPanel
+              title="Could not save recommendation"
+              description={recommendationSaveError}
+            />
           ) : null}
         </>
       ) : null}

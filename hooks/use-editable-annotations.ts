@@ -4,6 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useSupabase } from "@/components/supabase-provider";
+import { formatStorageError, getErrorMessage } from "@/lib/user-messages";
 import type { Annotation, AnnotationCategory } from "@/types";
 
 export type AnnotationUpdate = Partial<
@@ -32,11 +33,13 @@ export function useEditableAnnotations(
   const { storage } = useSupabase();
   const queryClient = useQueryClient();
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const syncedFingerprintRef = useRef("");
 
   useEffect(() => {
     syncedFingerprintRef.current = "";
     setAnnotations([]);
+    setSaveError(null);
   }, [pieceId]);
 
   useEffect(() => {
@@ -58,7 +61,11 @@ export function useEditableAnnotations(
       const sorted = sortAnnotations(next);
       syncedFingerprintRef.current = getAnnotationsFingerprint(sorted);
       setAnnotations(sorted);
-      void storage.setCachedAnnotations(pieceId, sorted);
+      setSaveError(null);
+
+      void storage.setCachedAnnotations(pieceId, sorted).catch((error) => {
+        setSaveError(formatStorageError(getErrorMessage(error)).description);
+      });
       queryClient.setQueryData(["annotations", pieceId], sorted);
     },
     [pieceId, queryClient, storage],
@@ -88,6 +95,7 @@ export function useEditableAnnotations(
     annotations,
     updateAnnotation,
     deleteAnnotation,
+    saveError,
   };
 }
 

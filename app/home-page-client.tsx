@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { PieceChip } from "@/components/piece-chip";
+import { EmptyPanel, LoadingPanel } from "@/components/status-panel";
 import { useSupabase } from "@/components/supabase-provider";
 import { buttonVariants } from "@/components/ui/button";
 import {
@@ -29,6 +30,7 @@ export function HomePageClient({ pieces }: HomePageClientProps) {
   const [recentRecommendations, setRecentRecommendations] = useState<
     Recommendation[]
   >([]);
+  const [isLoadingActivity, setIsLoadingActivity] = useState(true);
 
   useEffect(() => {
     if (!isReady) {
@@ -36,6 +38,7 @@ export function HomePageClient({ pieces }: HomePageClientProps) {
     }
 
     let cancelled = false;
+    setIsLoadingActivity(true);
 
     void (async () => {
       const [inProgress, recommendations] = await Promise.all([
@@ -46,6 +49,7 @@ export function HomePageClient({ pieces }: HomePageClientProps) {
       if (!cancelled) {
         setInProgressSession(inProgress);
         setRecentRecommendations(recommendations);
+        setIsLoadingActivity(false);
       }
     })();
 
@@ -57,6 +61,12 @@ export function HomePageClient({ pieces }: HomePageClientProps) {
   const inProgressPiece = inProgressSession
     ? getPieceById(inProgressSession.pieceId)
     : undefined;
+
+  const isFirstVisit =
+    isReady &&
+    !isLoadingActivity &&
+    !inProgressPiece &&
+    recentRecommendations.length === 0;
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 p-6 md:p-10">
@@ -82,13 +92,27 @@ export function HomePageClient({ pieces }: HomePageClientProps) {
         </p>
       </header>
 
-      {inProgressPiece ? (
+      {isLoadingActivity ? (
+        <LoadingPanel
+          title="Loading your library"
+          description="Fetching recent sessions and recommendations…"
+        />
+      ) : null}
+
+      {!isLoadingActivity && inProgressPiece ? (
         <section className="space-y-3">
           <h2 className="font-heading text-sm font-semibold tracking-widest uppercase">
             Continue listening
           </h2>
           <PieceChip piece={inProgressPiece} actionLabel="Resume" />
         </section>
+      ) : null}
+
+      {isFirstVisit ? (
+        <EmptyPanel
+          title="Your listening journey starts here"
+          description="Pick a piece below, follow the annotated timeline, then reflect on what you hear. Accelerando will suggest what to explore next — with reasoning."
+        />
       ) : null}
 
       <section className="space-y-3">
@@ -102,7 +126,7 @@ export function HomePageClient({ pieces }: HomePageClientProps) {
         </div>
       </section>
 
-      {recentRecommendations.length > 0 ? (
+      {!isLoadingActivity && recentRecommendations.length > 0 ? (
         <section className="space-y-3">
           <h2 className="font-heading text-sm font-semibold tracking-widest uppercase">
             Recent recommendations

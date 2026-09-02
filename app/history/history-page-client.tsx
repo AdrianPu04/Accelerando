@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { SessionTimeline } from "@/components/session-timeline";
+import { LoadingPanel } from "@/components/status-panel";
 import { useSupabase } from "@/components/supabase-provider";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -13,6 +14,7 @@ import type { SessionWithDetails } from "@/types";
 export function HistoryPageClient() {
   const { storage, isReady } = useSupabase();
   const [sessions, setSessions] = useState<SessionWithDetails[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(true);
 
   useEffect(() => {
     if (!isReady) {
@@ -20,10 +22,12 @@ export function HistoryPageClient() {
     }
 
     let cancelled = false;
+    setIsLoadingHistory(true);
 
     void storage.getSessionHistory().then((history) => {
       if (!cancelled) {
         setSessions(history);
+        setIsLoadingHistory(false);
       }
     });
 
@@ -59,7 +63,14 @@ export function HistoryPageClient() {
         </div>
       </header>
 
-      <SessionTimeline sessions={sessions} />
+      {isLoadingHistory ? (
+        <LoadingPanel
+          title="Loading your history"
+          description="Pulling sessions, reflections, and recommendations…"
+        />
+      ) : (
+        <SessionTimeline sessions={sessions} />
+      )}
     </div>
   );
 }

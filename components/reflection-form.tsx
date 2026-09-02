@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { ErrorPanel } from "@/components/status-panel";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -17,14 +18,18 @@ import type { Reflection } from "@/types";
 
 interface ReflectionFormProps {
   pieceId: string;
-  onSubmit: (reflection: Reflection) => void;
+  onSubmit: (reflection: Reflection) => void | Promise<void>;
   submittedReflection?: Reflection | null;
+  isSaving?: boolean;
+  saveError?: string | null;
 }
 
 export function ReflectionForm({
   pieceId,
   onSubmit,
   submittedReflection = null,
+  isSaving = false,
+  saveError = null,
 }: ReflectionFormProps) {
   const [text, setText] = useState("");
 
@@ -50,11 +55,11 @@ export function ReflectionForm({
     event.preventDefault();
 
     const trimmed = text.trim();
-    if (!trimmed || trimmed.length > REFLECTION_MAX_LENGTH) {
+    if (!trimmed || trimmed.length > REFLECTION_MAX_LENGTH || isSaving) {
       return;
     }
 
-    onSubmit({
+    void onSubmit({
       id: crypto.randomUUID(),
       pieceId,
       text: trimmed,
@@ -63,39 +68,49 @@ export function ReflectionForm({
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>What stood out?</CardTitle>
-        <CardDescription>
-          Jot down a moment, mood, or detail that caught your ear. There are no
-          wrong answers.
-        </CardDescription>
-      </CardHeader>
+    <div className="space-y-3">
+      {saveError ? (
+        <ErrorPanel
+          title="Could not save reflection"
+          description={saveError}
+        />
+      ) : null}
 
-      <form onSubmit={handleSubmit}>
-        <CardContent>
-          <label className="sr-only" htmlFor="reflection-text">
-            Your reflection
-          </label>
-          <Textarea
-            id="reflection-text"
-            placeholder="A modulation, a timbre, a phrase that stuck with you…"
-            value={text}
-            maxLength={REFLECTION_MAX_LENGTH}
-            onChange={(event) => setText(event.target.value)}
-            rows={4}
-          />
-          <p className="text-xs text-muted-foreground tabular-nums">
-            {text.length}/{REFLECTION_MAX_LENGTH}
-          </p>
-        </CardContent>
+      <Card>
+        <CardHeader>
+          <CardTitle>What stood out?</CardTitle>
+          <CardDescription>
+            Jot down a moment, mood, or detail that caught your ear. There are
+            no wrong answers.
+          </CardDescription>
+        </CardHeader>
 
-        <CardFooter>
-          <Button type="submit" disabled={!text.trim()}>
-            Save reflection
-          </Button>
-        </CardFooter>
-      </form>
-    </Card>
+        <form onSubmit={handleSubmit}>
+          <CardContent>
+            <label className="sr-only" htmlFor="reflection-text">
+              Your reflection
+            </label>
+            <Textarea
+              id="reflection-text"
+              placeholder="A modulation, a timbre, a phrase that stuck with you…"
+              value={text}
+              maxLength={REFLECTION_MAX_LENGTH}
+              onChange={(event) => setText(event.target.value)}
+              rows={4}
+              disabled={isSaving}
+            />
+            <p className="text-xs text-muted-foreground tabular-nums">
+              {text.length}/{REFLECTION_MAX_LENGTH}
+            </p>
+          </CardContent>
+
+          <CardFooter>
+            <Button type="submit" disabled={!text.trim() || isSaving}>
+              {isSaving ? "Saving…" : "Save reflection"}
+            </Button>
+          </CardFooter>
+        </form>
+      </Card>
+    </div>
   );
 }
