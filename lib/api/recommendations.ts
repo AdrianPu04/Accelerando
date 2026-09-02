@@ -1,3 +1,4 @@
+import { getAuthHeaders } from "@/lib/api/auth";
 import { recommendStreamEventSchema } from "@/lib/schemas/recommendation";
 import type { RecommendNextRequest, RecommendStreamEvent } from "@/lib/schemas/recommendation";
 import type { Piece } from "@/types";
@@ -56,9 +57,10 @@ export async function streamRecommendation(
   },
   signal?: AbortSignal,
 ): Promise<void> {
+  const headers = await getAuthHeaders();
   const response = await fetch("/api/recommend-next", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers,
     body: JSON.stringify(input),
     signal,
   });

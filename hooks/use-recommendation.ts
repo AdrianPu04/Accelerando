@@ -23,57 +23,10 @@ export function useRecommendation(
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
   const annotationsSnapshotRef = useRef<Annotation[]>([]);
-  const fetchedForReflectionIdRef = useRef<string | null>(null);
+  const completedForReflectionIdRef = useRef<string | null>(null);
+  const inFlightReflectionIdRef = useRef<string | null>(null);
 
   const annotationsReady = annotations.length > 0;
-
-  const runRecommendation = useCallback(
-    (activeReflection: Reflection, snapshot: Annotation[]) => {
-      setRecommendedPiece(null);
-      setReasoning("");
-      setError(null);
-      setStatus("loading");
-
-      const controller = new AbortController();
-
-      void streamRecommendation(
-        {
-          pieceId,
-          reflection: {
-            id: activeReflection.id,
-            text: activeReflection.text,
-            createdAt: activeReflection.createdAt,
-          },
-          annotations: snapshot.map((annotation) => ({
-            timestampSeconds: annotation.timestampSeconds,
-            label: annotation.label,
-            note: annotation.note,
-            category: annotation.category,
-          })),
-        },
-        {
-          onPiece: (piece) => {
-            setRecommendedPiece(piece);
-            setStatus("streaming");
-          },
-          onDelta: (text) => {
-            setReasoning((current) => current + text);
-          },
-          onDone: () => {
-            setStatus("complete");
-          },
-          onError: (message) => {
-            setError(message);
-            setStatus("error");
-          },
-        },
-        controller.signal,
-      );
-
-      return () => controller.abort();
-    },
-    [pieceId],
-  );
 
   useEffect(() => {
     if (!reflection || !annotationsReady) {
@@ -81,21 +34,91 @@ export function useRecommendation(
     }
 
     const isRetry = attempt > 0;
-    const alreadyFetched =
-      fetchedForReflectionIdRef.current === reflection.id && !isRetry;
 
-    if (alreadyFetched) {
+    if (
+      completedForReflectionIdRef.current === reflection.id &&
+      !isRetry
+    ) {
       return;
     }
 
-    if (fetchedForReflectionIdRef.current !== reflection.id) {
-      annotationsSnapshotRef.current = [...annotations];
+    if (inFlightReflectionIdRef.current === reflection.id && !isRetry) {
+      return;
     }
 
-    fetchedForReflectionIdRef.current = reflection.id;
+    annotationsSnapshotRef.current = [...annotations];
+    inFlightReflectionIdRef.current = reflection.id;
 
-    return runRecommendation(reflection, annotationsSnapshotRef.current);
-  }, [annotationsReady, attempt, reflection, runRecommendation]);
+    setRecommendedPiece(null);
+    setReasoning("");
+    setError(null);
+    setStatus("loading");
+
+    const controller = new AbortController();
+    let cancelled = false;
+
+    void streamRecommendation(
+      {
+        pieceId,
+        reflection: {
+          id: reflection.id,
+          text: reflection.text,
+          createdAt: reflection.createdAt,
+        },
+        annotations: annotationsSnapshotRef.current.map((annotation) => ({
+          timestampSeconds: annotation.timestampSeconds,
+          label: annotation.label,
+          note: annotation.note,
+          category: annotation.category,
+        })),
+      },
+      {
+        onPiece: (piece) => {
+          if (cancelled) {
+            return;
+          }
+
+          setRecommendedPiece(piece);
+          setStatus("streaming");
+        },
+        onDelta: (text) => {
+          if (cancelled) {
+            return;
+          }
+
+          setReasoning((current) => current + text);
+        },
+        onDone: () => {
+          if (cancelled) {
+            return;
+          }
+
+          completedForReflectionIdRef.current = reflection.id;
+          inFlightReflectionIdRef.current = null;
+          setStatus("complete");
+        },
+        onError: (message) => {
+          if (cancelled) {
+            return;
+          }
+
+          inFlightReflectionIdRef.current = null;
+          setError(message);
+          setStatus("error");
+        },
+      },
+      controller.signal,
+    );
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+
+      if (inFlightReflectionIdRef.current === reflection.id) {
+        inFlightReflectionIdRef.current = null;
+      }
+    };
+  }, [annotationsReady, attempt, pieceId, reflection]);
 
   const retry = useCallback(() => {
     setAttempt((current) => current + 1);

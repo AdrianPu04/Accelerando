@@ -3,12 +3,20 @@ import { z } from "zod";
 
 import { getAnnotationProvider } from "@/lib/ai/get-provider";
 import { AnnotationProviderError } from "@/lib/ai/types";
+import {
+  apiAuthErrorResponse,
+  enforceRateLimit,
+  requireApiUser,
+} from "@/lib/api/require-auth";
 import { toAnnotations } from "@/lib/annotations";
 import { getPieceById } from "@/lib/pieces";
 import { generateAnnotationsRequestSchema } from "@/lib/schemas/annotation";
 
 export async function POST(request: Request) {
   try {
+    const { userId } = await requireApiUser(request);
+    enforceRateLimit(userId, "annotations");
+
     let json: unknown;
 
     try {
@@ -30,6 +38,11 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ annotations, provider: provider.name });
   } catch (error) {
+    const authResponse = apiAuthErrorResponse(error);
+    if (authResponse) {
+      return authResponse;
+    }
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: "Invalid request body", details: error.issues },

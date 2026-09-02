@@ -1,10 +1,12 @@
+import { getAuthHeaders } from "@/lib/api/auth";
 import { generateAnnotationsApiResponseSchema } from "@/lib/schemas/annotation";
 import type { Annotation } from "@/types";
 
 export async function fetchAnnotations(pieceId: string): Promise<Annotation[]> {
+  const headers = await getAuthHeaders();
   const response = await fetch("/api/generate-annotations", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers,
     body: JSON.stringify({ pieceId }),
   });
 

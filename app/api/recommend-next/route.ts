@@ -3,6 +3,11 @@ import { z } from "zod";
 
 import { getRecommendationProvider } from "@/lib/ai/get-recommendation-provider";
 import { RecommendationProviderError } from "@/lib/ai/recommendation-types";
+import {
+  apiAuthErrorResponse,
+  enforceRateLimit,
+  requireApiUser,
+} from "@/lib/api/require-auth";
 import type { RecommendNextContext } from "@/lib/prompts/recommend-next";
 import { getAllPieces, getPieceById } from "@/lib/pieces";
 import { recommendNextRequestSchema } from "@/lib/schemas/recommendation";
@@ -43,6 +48,9 @@ function buildContext(
 
 export async function POST(request: Request) {
   try {
+    const { userId } = await requireApiUser(request);
+    enforceRateLimit(userId, "recommendations");
+
     let json: unknown;
 
     try {
@@ -124,6 +132,11 @@ export async function POST(request: Request) {
       },
     });
   } catch (error) {
+    const authResponse = apiAuthErrorResponse(error);
+    if (authResponse) {
+      return authResponse;
+    }
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: "Invalid request body", details: error.issues },
