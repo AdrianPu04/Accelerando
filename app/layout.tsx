@@ -1,17 +1,12 @@
 import type { Metadata } from "next";
-import { Geist_Mono, Noto_Sans, Playfair_Display } from "next/font/google";
+import { Bodoni_Moda, Geist_Mono } from "next/font/google";
 
 import { Providers } from "@/components/providers";
 import { cn } from "@/lib/utils";
 
 import "./globals.css";
 
-const playfairDisplayHeading = Playfair_Display({
-  subsets: ["latin"],
-  variable: "--font-heading",
-});
-
-const notoSans = Noto_Sans({
+const bodoni = Bodoni_Moda({
   subsets: ["latin"],
   variable: "--font-sans",
 });
@@ -36,9 +31,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={cn(
         "h-full antialiased",
-        notoSans.variable,
+        bodoni.variable,
         geistMono.variable,
-        playfairDisplayHeading.variable,
         "font-sans",
       )}
     >
