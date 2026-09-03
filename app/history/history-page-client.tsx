@@ -24,12 +24,24 @@ export function HistoryPageClient() {
     let cancelled = false;
     setIsLoadingHistory(true);
 
-    void storage.getSessionHistory().then((history) => {
-      if (!cancelled) {
-        setSessions(history);
-        setIsLoadingHistory(false);
-      }
-    });
+    void storage
+      .getSessionHistory()
+      .then((history) => {
+        if (!cancelled) {
+          setSessions(history);
+        }
+      })
+      .catch((error) => {
+        console.error("Failed to load history:", error);
+        if (!cancelled) {
+          setSessions([]);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsLoadingHistory(false);
+        }
+      });
 
     return () => {
       cancelled = true;

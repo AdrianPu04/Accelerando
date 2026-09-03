@@ -41,15 +41,26 @@ export function HomePageClient({ pieces }: HomePageClientProps) {
     setIsLoadingActivity(true);
 
     void (async () => {
-      const [inProgress, recommendations] = await Promise.all([
-        storage.getInProgressSession(),
-        storage.getRecentRecommendations(3),
-      ]);
+      try {
+        const [inProgress, recommendations] = await Promise.all([
+          storage.getInProgressSession(),
+          storage.getRecentRecommendations(3),
+        ]);
 
-      if (!cancelled) {
-        setInProgressSession(inProgress);
-        setRecentRecommendations(recommendations);
-        setIsLoadingActivity(false);
+        if (!cancelled) {
+          setInProgressSession(inProgress);
+          setRecentRecommendations(recommendations);
+        }
+      } catch (error) {
+        console.error("Failed to load home activity:", error);
+        if (!cancelled) {
+          setInProgressSession(null);
+          setRecentRecommendations([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoadingActivity(false);
+        }
       }
     })();
 

@@ -1,6 +1,6 @@
 "use client";
 
-import type { User } from "@supabase/supabase-js";
+import type { SupabaseClient, User } from "@supabase/supabase-js";
 import {
   createContext,
   useContext,
@@ -16,7 +16,11 @@ import {
   type ListeningStorage,
 } from "@/lib/storage";
 import { createClient } from "@/lib/supabase/client";
-import { getErrorMessage, getSupabaseSetupHint } from "@/lib/supabase/errors";
+import {
+  getErrorMessage,
+  getSupabaseSetupHint,
+  isJwtClockSkewError,
+} from "@/lib/supabase/errors";
 
 interface SupabaseContextValue {
   storage: ListeningStorage;
@@ -29,6 +33,77 @@ const SupabaseContext = createContext<SupabaseContextValue | null>(null);
 
 interface SupabaseProviderProps {
   children: ReactNode;
+}
+
+async function signInAnonymously(
+  client: SupabaseClient,
+): Promise<User> {
+  const { data, error } = await client.auth.signInAnonymously();
+
+  if (error) {
+    throw error;
+  }
+
+  if (!data.user) {
+    throw new Error("Could not establish an anonymous session");
+  }
+
+  return data.user;
+}
+
+/** Clear a bad/skewed JWT and mint a fresh anonymous session. */
+async function recoverSession(client: SupabaseClient): Promise<User> {
+  await client.auth.signOut({ scope: "local" });
+  return signInAnonymously(client);
+}
+
+/**
+ * Prefer an existing session; if PostgREST rejects the JWT (clock skew),
+ * discard it and sign in again.
+ */
+async function establishUser(client: SupabaseClient): Promise<User> {
+  const {
+    data: { session },
+    error: sessionError,
+  } = await client.auth.getSession();
+
+  if (sessionError) {
+    console.error("Supabase getSession failed:", sessionError);
+    return recoverSession(client);
+  }
+
+  if (!session?.user) {
+    return signInAnonymously(client);
+  }
+
+  // Probe that the access token is accepted by PostgREST (not just Auth).
+  const { error: probeError } = await client
+    .from("listening_sessions")
+    .select("id", { count: "exact", head: true })
+    .limit(1);
+
+  if (!probeError) {
+    return session.user;
+  }
+
+  if (isJwtClockSkewError(probeError)) {
+    console.warn(
+      "Supabase JWT rejected (clock skew or stale token). Re-authenticating…",
+      probeError,
+    );
+    return recoverSession(client);
+  }
+
+  // Other probe errors (missing table, RLS) still mean auth worked —
+  // let migration / pages surface them.
+  if (
+    getErrorMessage(probeError).toLowerCase().includes("jwt") ||
+    getErrorMessage(probeError).toLowerCase().includes("unauthorized")
+  ) {
+    return recoverSession(client);
+  }
+
+  return session.user;
 }
 
 export function SupabaseProvider({ children }: SupabaseProviderProps) {
@@ -57,35 +132,18 @@ export function SupabaseProvider({ children }: SupabaseProviderProps) {
 
     async function bootstrap() {
       try {
-        const {
-          data: { session },
-          error: sessionError,
-        } = await client.auth.getSession();
+        let activeUser = await establishUser(client);
 
-        if (sessionError) {
-          console.error("Supabase getSession failed:", sessionError);
-          await client.auth.signOut();
-        }
-
-        let activeUser = sessionError ? null : (session?.user ?? null);
-
-        if (!activeUser) {
-          const { data, error: signInError } =
-            await client.auth.signInAnonymously();
-
-          if (signInError) {
-            console.error("Supabase anonymous sign-in failed:", signInError);
-            throw signInError;
+        try {
+          await migrateLocalStorageToSupabase(client, activeUser.id);
+        } catch (migrationError) {
+          if (isJwtClockSkewError(migrationError)) {
+            activeUser = await recoverSession(client);
+            await migrateLocalStorageToSupabase(client, activeUser.id);
+          } else {
+            throw migrationError;
           }
-
-          activeUser = data.user;
         }
-
-        if (!activeUser) {
-          throw new Error("Could not establish an anonymous session");
-        }
-
-        await migrateLocalStorageToSupabase(client, activeUser.id);
 
         if (!cancelled) {
           setUser(activeUser);
