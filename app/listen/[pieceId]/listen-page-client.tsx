@@ -243,21 +243,21 @@ export function ListenPageClient({ piece }: ListenPageClientProps) {
             by analyzing the recording.
           </p>
 
+          <AnnotationTimeline
+            annotations={annotations}
+            currentTime={player.currentTime}
+            duration={player.duration}
+            onSeek={player.seekTo}
+          />
+
+          <AnnotationCard annotations={annotations} />
+
           <AnnotationReview
             annotations={annotations}
             onUpdate={updateAnnotation}
             onDelete={deleteAnnotation}
             onRegenerate={() => void handleRegenerate()}
             isRegenerating={isAnnotationsFetching}
-          />
-
-          <AnnotationCard annotations={annotations} />
-
-          <AnnotationTimeline
-            annotations={annotations}
-            currentTime={player.currentTime}
-            duration={player.duration}
-            onSeek={player.seekTo}
           />
         </>
       ) : null}
