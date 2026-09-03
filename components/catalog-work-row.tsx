@@ -12,29 +12,30 @@ interface CatalogWorkRowProps {
 
 export function CatalogWorkRow({ work, playablePieceId }: CatalogWorkRowProps) {
   return (
-    <div className="flex flex-col gap-3 border-b border-border py-4 last:border-b-0 sm:flex-row sm:items-start sm:justify-between">
-      <div className="min-w-0 space-y-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="secondary">{work.era}</Badge>
-          <Badge variant="outline">{work.genre}</Badge>
-          {work.recommended ? <Badge variant="outline">Essential</Badge> : null}
-          {playablePieceId ? <Badge>Playable</Badge> : null}
-        </div>
-        <p className="font-heading text-base font-semibold tracking-wide">
-          {work.composer}
-        </p>
+    <div className="grid grid-cols-[minmax(0,1.1fr)_minmax(0,2fr)_7rem_6rem_8rem] items-center gap-3 border-b border-border py-2.5 text-sm last:border-b-0">
+      <p className="truncate font-heading font-semibold tracking-wide">
+        {work.composer}
+      </p>
+
+      <div className="min-w-0">
         <Link
           href={`/piece/${work.id}`}
-          className="text-sm text-foreground underline-offset-4 hover:underline"
+          className="block truncate text-foreground underline-offset-4 hover:underline"
         >
           {work.title}
         </Link>
-        {work.subtitle ? (
-          <p className="text-xs text-muted-foreground">{work.subtitle}</p>
-        ) : null}
+        <div className="mt-0.5 flex flex-wrap items-center gap-2">
+          {work.recommended ? (
+            <Badge variant="outline">Essential</Badge>
+          ) : null}
+          {playablePieceId ? <Badge>Playable</Badge> : null}
+        </div>
       </div>
 
-      <div className="flex shrink-0 gap-2">
+      <span className="truncate text-muted-foreground">{work.era}</span>
+      <span className="truncate text-muted-foreground">{work.genre}</span>
+
+      <div className="flex justify-end gap-2">
         <Link
           href={`/piece/${work.id}`}
           className={cn(buttonVariants({ size: "xs", variant: "outline" }))}

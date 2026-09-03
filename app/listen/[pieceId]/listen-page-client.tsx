@@ -1,13 +1,12 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft } from "lucide-react";
-import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
 import { AnnotationCard } from "@/components/annotation-card";
 import { AnnotationReview } from "@/components/annotation-review";
 import { AnnotationTimeline } from "@/components/annotation-timeline";
+import { AppShell } from "@/components/app-shell";
 import { AudioPlayer } from "@/components/audio-player";
 import { PlaybackControls } from "@/components/playback-controls";
 import { RecommendationCard } from "@/components/recommendation-card";
@@ -18,7 +17,7 @@ import {
   ErrorPanel,
   LoadingPanel,
 } from "@/components/status-panel";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { useAnnotations } from "@/hooks/use-annotations";
 import { useAudioPlayer } from "@/hooks/use-audio-player";
 import { useEditableAnnotations } from "@/hooks/use-editable-annotations";
@@ -33,7 +32,6 @@ import {
   formatStorageError,
   getErrorMessage,
 } from "@/lib/user-messages";
-import { cn } from "@/lib/utils";
 import type { Piece, Reflection } from "@/types";
 
 interface ListenPageClientProps {
@@ -180,175 +178,177 @@ export function ListenPageClient({ piece }: ListenPageClientProps) {
   const showAnnotationRegenerating =
     isAnnotationsFetching && annotations.length > 0;
 
-  return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-6 md:p-10">
-      <Link
-        href="/"
-        onClick={() => player.pause()}
-        className={cn(
-          buttonVariants({ variant: "ghost", size: "xs" }),
-          "-ml-3 w-fit",
-        )}
-      >
-        <ArrowLeft />
-        Home
-      </Link>
+  const hasAnnotations =
+    !isAnnotationsPending && !isAnnotationsError && annotations.length > 0;
 
+  return (
+    <AppShell onNavigateHome={() => player.pause()}>
       <header className="space-y-1">
         <p className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
           {piece.era}
         </p>
-        <h1 className="font-heading text-3xl font-semibold">{piece.title}</h1>
+        <h1 className="font-heading text-4xl font-semibold">{piece.title}</h1>
         <p className="text-muted-foreground">
           {piece.composer}
           {piece.movement ? ` · ${piece.movement}` : null}
         </p>
       </header>
 
-      <AudioPlayer containerRef={player.containerRef} isReady={player.isReady} />
-
-      {showAnnotationLoading ? (
-        <LoadingPanel
-          title="Generating annotations"
-          description="Building a guided timeline from musical knowledge of this work…"
-        />
-      ) : null}
-
-      {showAnnotationRegenerating ? (
-        <LoadingPanel
-          title="Regenerating annotations"
-          description="Creating a fresh set of notes for this recording…"
-        />
-      ) : null}
-
-      {annotationErrorMessage ? (
-        <ErrorPanel
-          title={annotationErrorMessage.title}
-          description={annotationErrorMessage.description}
-          onRetry={() => void refetch()}
-        />
-      ) : null}
-
-      {saveError ? (
-        <ErrorPanel
-          title="Could not save annotation edits"
-          description={saveError}
-        />
-      ) : null}
-
-      {!isAnnotationsPending && !isAnnotationsError && annotations.length > 0 ? (
-        <>
-          <p className="text-xs text-muted-foreground">
-            Annotations are generated from musical knowledge of this work, not
-            by analyzing the recording.
-          </p>
-
-          <AnnotationTimeline
-            annotations={annotations}
-            currentTime={player.currentTime}
-            duration={player.duration}
-            onSeek={player.seekTo}
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:items-start">
+        <aside className="space-y-5 lg:sticky lg:top-8">
+          <AudioPlayer
+            containerRef={player.containerRef}
+            isReady={player.isReady}
           />
 
-          <AnnotationCard annotations={annotations} />
+          <div className="flex flex-wrap items-center gap-3">
+            <PlaybackControls
+              isReady={player.isReady}
+              isPlaying={player.isPlaying}
+              onPlay={player.play}
+              onPause={player.pause}
+            />
 
-          <AnnotationReview
-            annotations={annotations}
-            onUpdate={updateAnnotation}
-            onDelete={deleteAnnotation}
-            onRegenerate={() => void handleRegenerate()}
-            isRegenerating={isAnnotationsFetching}
-          />
-        </>
-      ) : null}
+            {player.isReady && !isReflectionOpen && !reflection ? (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={handleDoneListening}
+              >
+                Done listening
+              </Button>
+            ) : null}
+          </div>
 
-      {!isAnnotationsPending &&
-      !isAnnotationsError &&
-      annotations.length === 0 &&
-      (reflection || isReflectionOpen) ? (
-        <EmptyPanel
-          title="No annotations available"
-          description="Recommendations need at least one annotation. Regenerate annotations or reload the page to try again."
-          action={
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={() => void refetch()}
-            >
-              Generate annotations
-            </Button>
-          }
-        />
-      ) : null}
-
-      <div className="flex flex-wrap items-center gap-3">
-        <PlaybackControls
-          isReady={player.isReady}
-          isPlaying={player.isPlaying}
-          onPlay={player.play}
-          onPause={player.pause}
-        />
-
-        {player.isReady && !isReflectionOpen && !reflection ? (
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            onClick={handleDoneListening}
-          >
-            Done listening
-          </Button>
-        ) : null}
-      </div>
-
-      {isReflectionOpen || reflection ? (
-        <ReflectionForm
-          pieceId={piece.id}
-          submittedReflection={reflection}
-          onSubmit={handleReflectionSubmit}
-          isSaving={isPersistingReflection}
-          saveError={persistReflectionError}
-        />
-      ) : null}
-
-      {reflection && annotations.length > 0 ? (
-        <>
-          {recommendedPiece ? (
-            <RecommendationCard
-              piece={recommendedPiece}
-              reasoning={reasoning}
-              isComplete={isRecommendationComplete}
-              onStartListening={handleStartListening}
+          {showAnnotationLoading ? (
+            <LoadingPanel
+              title="Generating annotations"
+              description="Building a guided timeline from musical knowledge of this work…"
             />
           ) : null}
 
-          <RecommendationReveal
-            text={reasoning}
-            isLoading={isRecommendationLoading}
-            isStreaming={isRecommendationStreaming}
-            error={recommendationError}
-          />
-
-          {recommendationError ? (
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={retryRecommendation}
-            >
-              Retry recommendation
-            </Button>
+          {showAnnotationRegenerating ? (
+            <LoadingPanel
+              title="Regenerating annotations"
+              description="Creating a fresh set of notes for this recording…"
+            />
           ) : null}
 
-          {recommendationSaveError ? (
+          {annotationErrorMessage ? (
             <ErrorPanel
-              title="Could not save recommendation"
-              description={recommendationSaveError}
+              title={annotationErrorMessage.title}
+              description={annotationErrorMessage.description}
+              onRetry={() => void refetch()}
             />
           ) : null}
-        </>
-      ) : null}
-    </div>
+
+          {hasAnnotations ? (
+            <>
+              <p className="text-xs text-muted-foreground">
+                Annotations are generated from musical knowledge of this work,
+                not by analyzing the recording.
+              </p>
+              <AnnotationTimeline
+                annotations={annotations}
+                currentTime={player.currentTime}
+                duration={player.duration}
+                onSeek={player.seekTo}
+              />
+            </>
+          ) : null}
+        </aside>
+
+        <div className="space-y-6">
+          {saveError ? (
+            <ErrorPanel
+              title="Could not save annotation edits"
+              description={saveError}
+            />
+          ) : null}
+
+          {hasAnnotations ? (
+            <>
+              <AnnotationCard annotations={annotations} />
+              <AnnotationReview
+                annotations={annotations}
+                onUpdate={updateAnnotation}
+                onDelete={deleteAnnotation}
+                onRegenerate={() => void handleRegenerate()}
+                isRegenerating={isAnnotationsFetching}
+              />
+            </>
+          ) : null}
+
+          {!isAnnotationsPending &&
+          !isAnnotationsError &&
+          annotations.length === 0 &&
+          (reflection || isReflectionOpen) ? (
+            <EmptyPanel
+              title="No annotations available"
+              description="Recommendations need at least one annotation. Regenerate annotations or reload the page to try again."
+              action={
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => void refetch()}
+                >
+                  Generate annotations
+                </Button>
+              }
+            />
+          ) : null}
+
+          {isReflectionOpen || reflection ? (
+            <ReflectionForm
+              pieceId={piece.id}
+              submittedReflection={reflection}
+              onSubmit={handleReflectionSubmit}
+              isSaving={isPersistingReflection}
+              saveError={persistReflectionError}
+            />
+          ) : null}
+
+          {reflection && annotations.length > 0 ? (
+            <>
+              {recommendedPiece ? (
+                <RecommendationCard
+                  piece={recommendedPiece}
+                  reasoning={reasoning}
+                  isComplete={isRecommendationComplete}
+                  onStartListening={handleStartListening}
+                />
+              ) : null}
+
+              <RecommendationReveal
+                text={reasoning}
+                isLoading={isRecommendationLoading}
+                isStreaming={isRecommendationStreaming}
+                error={recommendationError}
+              />
+
+              {recommendationError ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={retryRecommendation}
+                >
+                  Retry recommendation
+                </Button>
+              ) : null}
+
+              {recommendationSaveError ? (
+                <ErrorPanel
+                  title="Could not save recommendation"
+                  description={recommendationSaveError}
+                />
+              ) : null}
+            </>
+          ) : null}
+        </div>
+      </div>
+    </AppShell>
   );
 }
