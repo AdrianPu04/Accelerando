@@ -5,6 +5,8 @@ export interface Piece {
   movement?: string;
   era: string;
   youtubeVideoId: string;
+  /** Display title of the attached YouTube recording, when known. */
+  youtubeTitle?: string;
   /** Seconds into the YouTube video where this piece/movement begins. */
   startOffsetSeconds: number;
   durationSeconds: number;

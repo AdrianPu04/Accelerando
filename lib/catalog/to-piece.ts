@@ -13,6 +13,7 @@ export function catalogWorkToPiece(work: CatalogWork): Piece | null {
     movement: work.subtitle,
     era: work.era,
     youtubeVideoId: work.youtubeVideoId,
+    youtubeTitle: work.youtubeTitle,
     startOffsetSeconds: work.startOffsetSeconds ?? 0,
     durationSeconds: work.durationSeconds,
     openOpusWorkId: work.openOpusWorkId,

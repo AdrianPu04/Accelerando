@@ -7,6 +7,7 @@ export const pieceSchema = z.object({
   movement: z.string().optional(),
   era: z.string().min(1),
   youtubeVideoId: z.string().min(1),
+  youtubeTitle: z.string().optional(),
   startOffsetSeconds: z.number().int().nonnegative(),
   durationSeconds: z.number().int().positive(),
   openOpusWorkId: z.string().optional(),

@@ -28,7 +28,7 @@ export const anthropicProvider: AnnotationProvider = {
 
     const message = await anthropic.messages.parse({
       model,
-      max_tokens: 2048,
+      max_tokens: 8192,
       messages: [
         {
           role: "user",

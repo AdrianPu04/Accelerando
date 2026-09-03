@@ -17,7 +17,7 @@ export const generatedAnnotationSchema = z.object({
 });
 
 export const generateAnnotationsResponseSchema = z.object({
-  annotations: z.array(generatedAnnotationSchema).min(3).max(12),
+  annotations: z.array(generatedAnnotationSchema).min(3).max(40),
 });
 
 export const generateAnnotationsRequestSchema = z.object({
