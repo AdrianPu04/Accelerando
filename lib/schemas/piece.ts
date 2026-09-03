@@ -9,6 +9,7 @@ export const pieceSchema = z.object({
   youtubeVideoId: z.string().min(1),
   startOffsetSeconds: z.number().int().nonnegative(),
   durationSeconds: z.number().int().positive(),
+  openOpusWorkId: z.string().optional(),
 });
 
 export type PieceSchema = z.infer<typeof pieceSchema>;

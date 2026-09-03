@@ -86,15 +86,26 @@ export function HomePageClient({ pieces }: HomePageClientProps) {
           <p className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
             Guided listening
           </p>
-          <Link
-            href="/history"
-            className={cn(
-              buttonVariants({ variant: "ghost", size: "sm" }),
-              "text-muted-foreground",
-            )}
-          >
-            History
-          </Link>
+          <div className="flex items-center gap-1">
+            <Link
+              href="/library"
+              className={cn(
+                buttonVariants({ variant: "ghost", size: "sm" }),
+                "text-muted-foreground",
+              )}
+            >
+              Library
+            </Link>
+            <Link
+              href="/history"
+              className={cn(
+                buttonVariants({ variant: "ghost", size: "sm" }),
+                "text-muted-foreground",
+              )}
+            >
+              History
+            </Link>
+          </div>
         </div>
         <h1 className="font-heading text-4xl font-semibold">Accelerando</h1>
         <p className="max-w-xl text-muted-foreground">
@@ -122,7 +133,12 @@ export function HomePageClient({ pieces }: HomePageClientProps) {
       {isFirstVisit ? (
         <EmptyPanel
           title="Your listening journey starts here"
-          description="Pick a piece below, follow the annotated timeline, then reflect on what you hear. Accelerando will suggest what to explore next — with reasoning."
+          description="Start with a curated recording below, or browse hundreds of Open Opus works in the library. Reflect after you listen — Accelerando will suggest what to explore next."
+          action={
+            <Link href="/library" className={cn(buttonVariants({ size: "sm" }))}>
+              Browse library
+            </Link>
+          }
         />
       ) : null}
 

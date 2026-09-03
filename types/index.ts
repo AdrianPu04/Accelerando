@@ -8,6 +8,8 @@ export interface Piece {
   /** Seconds into the YouTube video where this piece/movement begins. */
   startOffsetSeconds: number;
   durationSeconds: number;
+  /** Optional link to an OpenOpus catalog work. */
+  openOpusWorkId?: string;
 }
 
 export type AnnotationCategory =

@@ -1,8 +1,13 @@
+import { getAllCatalogWorks, getCatalogWorkById } from "@/lib/catalog";
+import { catalogWorkToPiece } from "@/lib/catalog/to-piece";
+import { isCatalogWorkPlayable } from "@/lib/catalog/types";
 import type { Piece } from "@/types";
 
 /**
- * Curated library — each piece maps to one specific YouTube recording.
+ * Curated playable library — each piece maps to one specific YouTube recording.
  * Annotation timestamps are relative to that recording, not the work in general.
+ *
+ * openOpusWorkId links a recording to the broader OpenOpus catalog when known.
  */
 export const PIECES: Piece[] = [
   {
@@ -27,10 +32,63 @@ export const PIECES: Piece[] = [
   },
 ];
 
-export function getPieceById(id: string): Piece | undefined {
+export function getCuratedPieceById(id: string): Piece | undefined {
   return PIECES.find((piece) => piece.id === id);
 }
 
+/** Curated recordings only (home "Start listening"). */
 export function getAllPieces(): Piece[] {
   return PIECES;
+}
+
+/** Curated + OpenOpus catalog works that have an attached YouTube recording. */
+export function getAllPlayablePieces(): Piece[] {
+  const curatedIds = new Set(PIECES.map((piece) => piece.id));
+  const fromCatalog = getAllCatalogWorks()
+    .filter(isCatalogWorkPlayable)
+    .map(catalogWorkToPiece)
+    .filter((piece): piece is Piece => piece !== null)
+    .filter((piece) => !curatedIds.has(piece.id));
+
+  return [...PIECES, ...fromCatalog];
+}
+
+export function getPieceById(id: string): Piece | undefined {
+  const curated = getCuratedPieceById(id);
+  if (curated) {
+    return curated;
+  }
+
+  const catalogWork = getCatalogWorkById(id);
+  if (!catalogWork) {
+    return undefined;
+  }
+
+  return catalogWorkToPiece(catalogWork) ?? undefined;
+}
+
+export function getPlayablePiecesForComposer(composer: string): Piece[] {
+  const needle = composer.toLowerCase();
+
+  return getAllPlayablePieces().filter(
+    (piece) =>
+      piece.composer.toLowerCase() === needle ||
+      piece.composer.toLowerCase().includes(needle) ||
+      needle.includes(piece.composer.toLowerCase()),
+  );
+}
+
+export function getPlayablePieceForOpenOpusWork(
+  openOpusWorkId: string,
+): Piece | undefined {
+  const curated = PIECES.find((piece) => piece.openOpusWorkId === openOpusWorkId);
+  if (curated) {
+    return curated;
+  }
+
+  const catalogWork = getAllCatalogWorks().find(
+    (work) => work.openOpusWorkId === openOpusWorkId && isCatalogWorkPlayable(work),
+  );
+
+  return catalogWork ? catalogWorkToPiece(catalogWork) ?? undefined : undefined;
 }

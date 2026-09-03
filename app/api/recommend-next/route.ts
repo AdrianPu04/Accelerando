@@ -9,7 +9,7 @@ import {
   requireApiUser,
 } from "@/lib/api/require-auth";
 import type { RecommendNextContext } from "@/lib/prompts/recommend-next";
-import { getAllPieces, getPieceById } from "@/lib/pieces";
+import { getAllPlayablePieces, getPieceById } from "@/lib/pieces";
 import { recommendNextRequestSchema } from "@/lib/schemas/recommendation";
 import type { Annotation, Piece } from "@/types";
 
@@ -42,7 +42,10 @@ function buildContext(
       createdAt: body.reflection.createdAt,
     },
     annotations,
-    catalog: getAllPieces().filter((candidate) => candidate.id !== piece.id),
+    catalog: getAllPlayablePieces()
+      .filter((candidate) => candidate.id !== piece.id)
+      // Keep the recommend prompt bounded as the YouTube-backed catalog grows.
+      .slice(0, 40),
   };
 }
 
