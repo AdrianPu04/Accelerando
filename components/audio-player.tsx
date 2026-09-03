@@ -16,7 +16,7 @@ export function AudioPlayer({
   return (
     <div
       className={cn(
-        "relative aspect-video w-full overflow-hidden rounded-lg bg-black",
+        "relative aspect-video w-full overflow-hidden bg-black",
         className,
       )}
     >

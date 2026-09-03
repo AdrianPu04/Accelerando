@@ -181,21 +181,26 @@ export function ListenPageClient({ piece }: ListenPageClientProps) {
   const hasAnnotations =
     !isAnnotationsPending && !isAnnotationsError && annotations.length > 0;
 
-  return (
-    <AppShell onNavigateHome={() => player.pause()}>
-      <header className="space-y-1">
-        <p className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
-          {piece.era}
-        </p>
-        <h1 className="font-heading text-4xl font-semibold">{piece.title}</h1>
-        <p className="text-muted-foreground">
-          {piece.composer}
-          {piece.movement ? ` · ${piece.movement}` : null}
-        </p>
-      </header>
+  const showAfterListening = Boolean(isReflectionOpen || reflection);
 
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:items-start">
-        <aside className="space-y-5 lg:sticky lg:top-8">
+  return (
+    <AppShell className="gap-6" onNavigateHome={() => player.pause()}>
+      <div className="grid min-h-[calc(100vh-5.5rem)] gap-x-8 gap-y-10 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:items-start">
+        <aside className="flex flex-col gap-5 lg:sticky lg:top-5">
+          <header className="space-y-2">
+            <p className="text-[0.65rem] font-semibold tracking-widest text-muted-foreground uppercase">
+              {piece.composer}
+              <span className="mx-2 text-border">·</span>
+              {piece.era}
+            </p>
+            <h1 className="font-heading text-3xl font-semibold tracking-tight text-balance xl:text-4xl">
+              {piece.title}
+            </h1>
+            {piece.movement ? (
+              <p className="text-muted-foreground">{piece.movement}</p>
+            ) : null}
+          </header>
+
           <AudioPlayer
             containerRef={player.containerRef}
             isReady={player.isReady}
@@ -210,28 +215,27 @@ export function ListenPageClient({ piece }: ListenPageClientProps) {
             />
 
             {player.isReady && !isReflectionOpen && !reflection ? (
-              <Button
+              <button
                 type="button"
-                size="sm"
-                variant="outline"
                 onClick={handleDoneListening}
+                className="text-xs font-semibold tracking-widest text-muted-foreground uppercase transition-colors hover:text-foreground"
               >
                 Done listening
-              </Button>
+              </button>
             ) : null}
           </div>
 
           {showAnnotationLoading ? (
             <LoadingPanel
               title="Generating annotations"
-              description="Building a guided timeline from musical knowledge of this work…"
+              description="Building a guided timeline…"
             />
           ) : null}
 
           {showAnnotationRegenerating ? (
             <LoadingPanel
-              title="Regenerating annotations"
-              description="Creating a fresh set of notes for this recording…"
+              title="Regenerating"
+              description="Creating a fresh set of notes…"
             />
           ) : null}
 
@@ -244,22 +248,16 @@ export function ListenPageClient({ piece }: ListenPageClientProps) {
           ) : null}
 
           {hasAnnotations ? (
-            <>
-              <p className="text-xs text-muted-foreground">
-                Annotations are generated from musical knowledge of this work,
-                not by analyzing the recording.
-              </p>
-              <AnnotationTimeline
-                annotations={annotations}
-                currentTime={player.currentTime}
-                duration={player.duration}
-                onSeek={player.seekTo}
-              />
-            </>
+            <AnnotationTimeline
+              annotations={annotations}
+              currentTime={player.currentTime}
+              duration={player.duration}
+              onSeek={player.seekTo}
+            />
           ) : null}
         </aside>
 
-        <div className="space-y-6">
+        <div className="flex min-w-0 flex-col gap-10 lg:min-h-[calc(100vh-5.5rem)] lg:border-l lg:border-border lg:pl-8">
           {saveError ? (
             <ErrorPanel
               title="Could not save annotation edits"
@@ -268,7 +266,7 @@ export function ListenPageClient({ piece }: ListenPageClientProps) {
           ) : null}
 
           {hasAnnotations ? (
-            <>
+            <section className="space-y-8">
               <AnnotationCard annotations={annotations} />
               <AnnotationReview
                 annotations={annotations}
@@ -277,16 +275,20 @@ export function ListenPageClient({ piece }: ListenPageClientProps) {
                 onRegenerate={() => void handleRegenerate()}
                 isRegenerating={isAnnotationsFetching}
               />
-            </>
+              <p className="text-[0.7rem] leading-relaxed text-muted-foreground">
+                Notes are drawn from musical knowledge of this work, not from
+                analyzing the audio waveform.
+              </p>
+            </section>
           ) : null}
 
           {!isAnnotationsPending &&
           !isAnnotationsError &&
           annotations.length === 0 &&
-          (reflection || isReflectionOpen) ? (
+          showAfterListening ? (
             <EmptyPanel
               title="No annotations available"
-              description="Recommendations need at least one annotation. Regenerate annotations or reload the page to try again."
+              description="Recommendations need at least one annotation. Regenerate or reload to try again."
               action={
                 <Button
                   type="button"
@@ -300,7 +302,7 @@ export function ListenPageClient({ piece }: ListenPageClientProps) {
             />
           ) : null}
 
-          {isReflectionOpen || reflection ? (
+          {showAfterListening ? (
             <ReflectionForm
               pieceId={piece.id}
               submittedReflection={reflection}
@@ -311,16 +313,7 @@ export function ListenPageClient({ piece }: ListenPageClientProps) {
           ) : null}
 
           {reflection && annotations.length > 0 ? (
-            <>
-              {recommendedPiece ? (
-                <RecommendationCard
-                  piece={recommendedPiece}
-                  reasoning={reasoning}
-                  isComplete={isRecommendationComplete}
-                  onStartListening={handleStartListening}
-                />
-              ) : null}
-
+            <section className="space-y-8 border-t border-border pt-10">
               <RecommendationReveal
                 text={reasoning}
                 isLoading={isRecommendationLoading}
@@ -339,13 +332,21 @@ export function ListenPageClient({ piece }: ListenPageClientProps) {
                 </Button>
               ) : null}
 
+              {recommendedPiece ? (
+                <RecommendationCard
+                  piece={recommendedPiece}
+                  isComplete={isRecommendationComplete}
+                  onStartListening={handleStartListening}
+                />
+              ) : null}
+
               {recommendationSaveError ? (
                 <ErrorPanel
                   title="Could not save recommendation"
                   description={recommendationSaveError}
                 />
               ) : null}
-            </>
+            </section>
           ) : null}
         </div>
       </div>

@@ -1,12 +1,5 @@
 "use client";
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { ErrorPanel, LoadingPanel } from "@/components/status-panel";
 import { formatAiError } from "@/lib/user-messages";
 
@@ -45,16 +38,16 @@ export function RecommendationReveal({
   }
 
   return (
-    <Card aria-live="polite">
-      <CardHeader>
-        <CardTitle>Why this piece</CardTitle>
+    <article className="max-w-prose space-y-3" aria-live="polite">
+      <p className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
+        Why this piece
         {isStreaming ? (
-          <CardDescription>Writing your recommendation…</CardDescription>
+          <span className="ml-2 font-normal normal-case tracking-normal">
+            · writing…
+          </span>
         ) : null}
-      </CardHeader>
-      <CardContent>
-        <p className="leading-relaxed whitespace-pre-wrap">{text}</p>
-      </CardContent>
-    </Card>
+      </p>
+      <p className="text-base leading-[1.75] whitespace-pre-wrap">{text}</p>
+    </article>
   );
 }

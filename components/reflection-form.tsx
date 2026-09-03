@@ -4,14 +4,6 @@ import { useState } from "react";
 
 import { ErrorPanel } from "@/components/status-panel";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { REFLECTION_MAX_LENGTH } from "@/lib/schemas/recommendation";
 import type { Reflection } from "@/types";
@@ -35,19 +27,12 @@ export function ReflectionForm({
 
   if (submittedReflection) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Reflection saved</CardTitle>
-          <CardDescription>
-            Thanks — your notes will help shape what to listen to next.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="leading-relaxed text-muted-foreground">
-            {submittedReflection.text}
-          </p>
-        </CardContent>
-      </Card>
+      <section className="max-w-prose space-y-3 border-t border-border pt-8">
+        <p className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
+          Your reflection
+        </p>
+        <p className="text-base leading-relaxed">{submittedReflection.text}</p>
+      </section>
     );
   }
 
@@ -68,7 +53,7 @@ export function ReflectionForm({
   };
 
   return (
-    <div className="space-y-3">
+    <section className="max-w-prose space-y-4 border-t border-border pt-8">
       {saveError ? (
         <ErrorPanel
           title="Could not save reflection"
@@ -76,41 +61,38 @@ export function ReflectionForm({
         />
       ) : null}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>What stood out?</CardTitle>
-          <CardDescription>
-            Jot down a moment, mood, or detail that caught your ear. There are
-            no wrong answers.
-          </CardDescription>
-        </CardHeader>
+      <div className="space-y-2">
+        <h2 className="font-heading text-2xl font-semibold tracking-tight">
+          What stood out?
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          A moment, mood, or detail that caught your ear. No wrong answers.
+        </p>
+      </div>
 
-        <form onSubmit={handleSubmit}>
-          <CardContent>
-            <label className="sr-only" htmlFor="reflection-text">
-              Your reflection
-            </label>
-            <Textarea
-              id="reflection-text"
-              placeholder="A modulation, a timbre, a phrase that stuck with you…"
-              value={text}
-              maxLength={REFLECTION_MAX_LENGTH}
-              onChange={(event) => setText(event.target.value)}
-              rows={4}
-              disabled={isSaving}
-            />
-            <p className="text-xs text-muted-foreground tabular-nums">
-              {text.length}/{REFLECTION_MAX_LENGTH}
-            </p>
-          </CardContent>
-
-          <CardFooter>
-            <Button type="submit" disabled={!text.trim() || isSaving}>
-              {isSaving ? "Saving…" : "Save reflection"}
-            </Button>
-          </CardFooter>
-        </form>
-      </Card>
-    </div>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <label className="sr-only" htmlFor="reflection-text">
+          Your reflection
+        </label>
+        <Textarea
+          id="reflection-text"
+          placeholder="A modulation, a timbre, a phrase that stuck with you…"
+          value={text}
+          maxLength={REFLECTION_MAX_LENGTH}
+          onChange={(event) => setText(event.target.value)}
+          rows={5}
+          disabled={isSaving}
+          className="min-h-28 rounded-none border-0 border-b border-input bg-transparent px-0 shadow-none focus-visible:border-foreground focus-visible:ring-0"
+        />
+        <div className="flex items-center justify-between gap-4">
+          <p className="text-xs text-muted-foreground tabular-nums">
+            {text.length}/{REFLECTION_MAX_LENGTH}
+          </p>
+          <Button type="submit" size="sm" disabled={!text.trim() || isSaving}>
+            {isSaving ? "Saving…" : "Save reflection"}
+          </Button>
+        </div>
+      </form>
+    </section>
   );
 }

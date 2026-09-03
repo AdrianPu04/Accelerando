@@ -3,16 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { AppShell } from "@/components/app-shell";
-import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { getCatalogWorkById } from "@/lib/catalog";
 import { catalogWorkToPiece } from "@/lib/catalog/to-piece";
 import { isCatalogWorkPlayable } from "@/lib/catalog/types";
@@ -57,26 +48,30 @@ export default async function PiecePage({ params }: PiecePageProps) {
     (piece) => piece.id !== exactPlayable?.id,
   );
 
+  const metaBits = [
+    work.era,
+    work.genre,
+    work.recommended ? "Essential" : null,
+    work.popular ? "Popular" : null,
+  ].filter(Boolean);
+
   return (
     <AppShell>
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)] lg:items-start">
+      <div className="grid gap-12 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,0.7fr)] lg:items-start">
         <header className="space-y-3">
-          <div className="flex flex-wrap gap-2">
-            <Badge variant="secondary">{work.era}</Badge>
-            <Badge variant="outline">{work.genre}</Badge>
-            {work.recommended ? (
-              <Badge variant="outline">Essential</Badge>
-            ) : null}
-            {work.popular ? <Badge variant="outline">Popular</Badge> : null}
-          </div>
           <p className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
             {work.composerCompleteName}
           </p>
-          <h1 className="font-heading text-4xl font-semibold">{work.title}</h1>
+          <h1 className="font-heading text-4xl font-semibold tracking-tight text-balance">
+            {work.title}
+          </h1>
           {work.subtitle ? (
             <p className="text-muted-foreground">{work.subtitle}</p>
           ) : null}
-          <p className="text-xs text-muted-foreground">
+          <p className="text-[0.65rem] font-semibold tracking-widest text-muted-foreground uppercase">
+            {metaBits.join(" · ")}
+          </p>
+          <p className="pt-4 text-xs text-muted-foreground">
             Metadata from{" "}
             <a
               href="https://openopus.org"
@@ -85,62 +80,61 @@ export default async function PiecePage({ params }: PiecePageProps) {
               className="underline underline-offset-4"
             >
               Open Opus
-            </a>{" "}
-            (public domain). Work ID {work.openOpusWorkId}.
+            </a>
+            . Work ID {work.openOpusWorkId}.
           </p>
         </header>
 
-        <div className="space-y-4 lg:sticky lg:top-8">
+        <aside className="space-y-6 border-t border-border pt-6 lg:sticky lg:top-8 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-8">
           {exactPlayable ? (
-            <Card>
-              <CardHeader>
-                <CardTitle>Guided listening available</CardTitle>
-                <CardDescription>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <p className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
+                  Guided listening
+                </p>
+                <p className="text-sm text-muted-foreground">
                   This work has a YouTube recording with synced annotations.
-                </CardDescription>
-              </CardHeader>
-              <CardFooter>
-                <Link
-                  href={`/listen/${exactPlayable.id}`}
-                  className={cn(buttonVariants())}
-                >
-                  Start listening
-                </Link>
-              </CardFooter>
-            </Card>
+                </p>
+              </div>
+              <Link
+                href={`/listen/${exactPlayable.id}`}
+                className={cn(buttonVariants())}
+              >
+                Start listening
+              </Link>
+            </div>
           ) : (
-            <Card className="border-dashed">
-              <CardHeader>
-                <CardTitle>Catalog entry</CardTitle>
-                <CardDescription>
-                  Open Opus provides metadata for this work. A recording for
-                  guided listening hasn&apos;t been linked yet.
-                </CardDescription>
-              </CardHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <p className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
+                  Catalog entry
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  A recording for guided listening hasn&apos;t been linked yet.
+                </p>
+              </div>
               {composerPlayables.length > 0 ? (
-                <CardContent className="space-y-3">
+                <div className="space-y-3">
                   <p className="text-sm text-muted-foreground">
-                    Meanwhile, you can listen to another {work.composer} work we
-                    already support:
+                    Other {work.composer} works you can listen to:
                   </p>
-                  <div className="flex flex-wrap gap-2">
+                  <ul className="space-y-2">
                     {composerPlayables.map((piece) => (
-                      <Link
-                        key={piece.id}
-                        href={`/listen/${piece.id}`}
-                        className={cn(
-                          buttonVariants({ size: "sm", variant: "outline" }),
-                        )}
-                      >
-                        {piece.movement ?? piece.title}
-                      </Link>
+                      <li key={piece.id}>
+                        <Link
+                          href={`/listen/${piece.id}`}
+                          className="text-sm underline-offset-4 hover:underline"
+                        >
+                          {piece.movement ?? piece.title}
+                        </Link>
+                      </li>
                     ))}
-                  </div>
-                </CardContent>
+                  </ul>
+                </div>
               ) : null}
-            </Card>
+            </div>
           )}
-        </div>
+        </aside>
       </div>
     </AppShell>
   );

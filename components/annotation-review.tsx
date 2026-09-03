@@ -96,8 +96,8 @@ export function AnnotationReview({
   };
 
   return (
-    <section className="rounded-lg border border-border">
-      <div className="flex items-center justify-between gap-3 p-4">
+    <section className="border-t border-border pt-2">
+      <div className="flex items-center justify-between gap-3 py-3">
         <button
           type="button"
           className="flex flex-1 items-center gap-2 text-left"
@@ -111,9 +111,11 @@ export function AnnotationReview({
             )}
           />
           <div>
-            <p className="text-sm font-medium">Review annotations</p>
+            <p className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
+              Review annotations
+            </p>
             <p className="text-xs text-muted-foreground">
-              Edit or remove markers before you listen.
+              Edit or remove markers if needed.
             </p>
           </div>
         </button>
@@ -130,14 +132,14 @@ export function AnnotationReview({
       </div>
 
       {isOpen ? (
-        <ul className="space-y-3 border-t border-border p-4 pt-3">
+        <ul className="space-y-4 border-t border-border py-4">
           {annotations.map((annotation) => {
             const isEditing = editingId === annotation.id;
 
             return (
               <li
                 key={annotation.id}
-                className="rounded-md border border-border/70 p-3"
+                className="border-b border-border/70 pb-4 last:border-b-0 last:pb-0"
               >
                 {isEditing ? (
                   <div className="space-y-3">

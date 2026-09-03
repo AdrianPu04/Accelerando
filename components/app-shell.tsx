@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
-import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
@@ -15,9 +14,7 @@ const NAV_ITEMS = [
 
 interface AppShellProps {
   children: ReactNode;
-  /** Optional eyebrow above the page title area when pages don't supply their own. */
   className?: string;
-  /** Pause handlers etc. when leaving listen via brand link. */
   onNavigateHome?: () => void;
 }
 
@@ -27,20 +24,20 @@ export function AppShell({ children, className, onNavigateHome }: AppShellProps)
   return (
     <div
       className={cn(
-        "mx-auto flex w-full max-w-7xl flex-col gap-8 px-8 py-8",
+        "mx-auto flex w-full max-w-[100rem] flex-col gap-8 px-5 py-5 lg:px-6",
         className,
       )}
     >
-      <header className="flex items-end justify-between gap-8 border-b border-border pb-4">
+      <header className="flex items-baseline justify-between gap-8 border-b border-border pb-5">
         <Link
           href="/"
           onClick={onNavigateHome}
-          className="font-heading text-2xl font-semibold tracking-tight"
+          className="font-heading text-xl font-semibold tracking-tight"
         >
           Accelerando
         </Link>
 
-        <nav className="flex items-center gap-1" aria-label="Main">
+        <nav className="flex items-baseline gap-6" aria-label="Main">
           {NAV_ITEMS.map((item) => {
             const isActive =
               item.href === "/"
@@ -53,10 +50,10 @@ export function AppShell({ children, className, onNavigateHome }: AppShellProps)
                 href={item.href}
                 onClick={item.href === "/" ? onNavigateHome : undefined}
                 className={cn(
-                  buttonVariants({ variant: "ghost", size: "sm" }),
+                  "text-sm transition-colors",
                   isActive
                     ? "text-foreground"
-                    : "text-muted-foreground",
+                    : "text-muted-foreground hover:text-foreground",
                 )}
                 aria-current={isActive ? "page" : undefined}
               >

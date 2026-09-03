@@ -41,11 +41,6 @@ export function AnnotationTimeline({
   const playheadPercent =
     duration > 0 ? Math.min(100, Math.max(0, (currentTime / sliderMax) * 100)) : 0;
 
-  const activeAnnotation = useMemo(
-    () => annotations.find((annotation) => annotation.id === activeAnnotationId),
-    [annotations, activeAnnotationId],
-  );
-
   const sorted = useMemo(
     () =>
       [...annotations].sort(
@@ -56,14 +51,13 @@ export function AnnotationTimeline({
 
   return (
     <section className="space-y-3" aria-label="Listening timeline">
-      <div className="flex items-center justify-between font-mono text-xs text-muted-foreground tabular-nums">
+      <div className="flex items-center justify-between font-mono text-[0.7rem] text-muted-foreground tabular-nums">
         <span>{formatTime(currentTime)}</span>
         <span>{formatTime(duration)}</span>
       </div>
 
-      <div className="relative space-y-2">
-        {/* Landmark rail — separate from the scrub thumb */}
-        <div className="relative h-11">
+      <div className="relative space-y-3">
+        <div className="relative h-10">
           <div
             className="absolute inset-x-0 bottom-0 h-px bg-border"
             aria-hidden
@@ -76,17 +70,16 @@ export function AnnotationTimeline({
                 : 0;
             const isActive = annotation.id === activeAnnotationId;
             const styles = getAnnotationCategoryStyles(annotation.category);
-            // Alternate stem heights slightly so dense clusters stay readable.
-            const stemHeight = isActive ? "h-9" : index % 3 === 0 ? "h-7" : "h-5";
+            const stemHeight = isActive ? "h-8" : index % 3 === 0 ? "h-6" : "h-4";
 
             return (
               <button
                 key={annotation.id}
                 type="button"
                 className={cn(
-                  "absolute bottom-0 z-10 flex -translate-x-1/2 flex-col items-center justify-end outline-none transition-[height,opacity,transform] duration-300",
+                  "absolute bottom-0 z-10 flex -translate-x-1/2 flex-col items-center justify-end outline-none transition-[height,opacity] duration-300",
                   stemHeight,
-                  isActive ? "z-20 opacity-100" : "opacity-70 hover:opacity-100",
+                  isActive ? "z-20 opacity-100" : "opacity-55 hover:opacity-100",
                 )}
                 style={{ left: `${position}%` }}
                 onClick={() => onSeek(annotation.timestampSeconds)}
@@ -95,61 +88,43 @@ export function AnnotationTimeline({
               >
                 <span
                   className={cn(
-                    "w-px flex-1 rounded-full transition-[width,background-color,box-shadow] duration-300",
+                    "w-px flex-1 rounded-full transition-[width] duration-300",
                     styles.tick,
-                    isActive && "w-0.5 shadow-[0_0_0_3px_color-mix(in_oklch,var(--primary)_18%,transparent)]",
+                    isActive && "w-0.5",
                   )}
                 />
                 <span
                   className={cn(
                     "mt-0.5 size-1.5 rounded-full transition-transform duration-300",
                     styles.dot,
-                    isActive && "scale-150",
+                    isActive && "scale-125",
                   )}
                 />
               </button>
             );
           })}
 
-          {/* Playhead spanning the landmark rail */}
           <div
-            className="pointer-events-none absolute top-0 bottom-0 z-30 w-px bg-foreground/70"
+            className="pointer-events-none absolute top-0 bottom-0 z-30 w-px bg-foreground/60"
             style={{ left: `${playheadPercent}%` }}
             aria-hidden
           >
-            <span className="absolute -top-1 left-1/2 h-2 w-2 -translate-x-1/2 rotate-45 rounded-[1px] border border-foreground/20 bg-background shadow-sm" />
+            <span className="absolute -top-1 left-1/2 h-2 w-2 -translate-x-1/2 rotate-45 border border-foreground/25 bg-background" />
           </div>
         </div>
 
-        {/* Scrubber */}
-        <div className="relative px-0.5">
-          <Slider
-            min={0}
-            max={sliderMax}
-            step={0.25}
-            value={[currentTime]}
-            onValueChange={(value) => {
-              const nextTime = Array.isArray(value) ? value[0] : value;
-              if (typeof nextTime === "number") {
-                onSeek(nextTime);
-              }
-            }}
-          />
-        </div>
-
-        <p
-          className={cn(
-            "min-h-5 truncate text-center text-sm transition-opacity duration-300",
-            activeAnnotation
-              ? "text-foreground opacity-100"
-              : "text-muted-foreground opacity-60",
-          )}
-          aria-live="polite"
-        >
-          {activeAnnotation
-            ? activeAnnotation.label
-            : "Play to follow guided landmarks"}
-        </p>
+        <Slider
+          min={0}
+          max={sliderMax}
+          step={0.25}
+          value={[currentTime]}
+          onValueChange={(value) => {
+            const nextTime = Array.isArray(value) ? value[0] : value;
+            if (typeof nextTime === "number") {
+              onSeek(nextTime);
+            }
+          }}
+        />
       </div>
     </section>
   );

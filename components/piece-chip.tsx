@@ -1,7 +1,5 @@
 import Link from "next/link";
 
-import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { Piece } from "@/types";
 
@@ -20,30 +18,26 @@ export function PieceChip({
     <Link
       href={`/listen/${piece.id}`}
       className={cn(
-        "group flex flex-col gap-2 rounded-lg border border-border p-4 transition-colors hover:bg-muted/40",
+        "group grid grid-cols-[minmax(0,1fr)_auto] items-end gap-4 border-b border-border py-4 transition-colors hover:border-foreground/40",
         className,
       )}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="space-y-1">
-          <Badge variant="secondary">{piece.era}</Badge>
-          <p className="font-heading text-base font-semibold tracking-wide">
-            {piece.composer}
-          </p>
-          <p className="text-sm text-muted-foreground">{piece.title}</p>
-          {piece.movement ? (
-            <p className="text-xs text-muted-foreground">{piece.movement}</p>
-          ) : null}
-        </div>
-        <span
-          className={cn(
-            buttonVariants({ size: "xs", variant: "outline" }),
-            "shrink-0",
-          )}
-        >
-          {actionLabel}
-        </span>
+      <div className="min-w-0 space-y-1">
+        <p className="text-[0.65rem] font-semibold tracking-widest text-muted-foreground uppercase">
+          {piece.composer}
+          <span className="mx-2 text-border">·</span>
+          {piece.era}
+        </p>
+        <p className="font-heading text-lg font-semibold tracking-tight text-balance">
+          {piece.title}
+        </p>
+        {piece.movement ? (
+          <p className="truncate text-sm text-muted-foreground">{piece.movement}</p>
+        ) : null}
       </div>
+      <span className="pb-1 text-xs font-semibold tracking-widest text-muted-foreground uppercase transition-colors group-hover:text-foreground">
+        {actionLabel}
+      </span>
     </Link>
   );
 }

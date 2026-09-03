@@ -8,14 +8,6 @@ import { PieceChip } from "@/components/piece-chip";
 import { EmptyPanel, LoadingPanel } from "@/components/status-panel";
 import { useSupabase } from "@/components/supabase-provider";
 import { buttonVariants } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { getPieceById } from "@/lib/pieces";
 import { cn } from "@/lib/utils";
 import type { ListeningSession, Piece, Recommendation } from "@/types";
@@ -82,14 +74,13 @@ export function HomePageClient({ pieces }: HomePageClientProps) {
 
   return (
     <AppShell>
-      <header className="max-w-3xl space-y-2">
+      <header className="max-w-2xl space-y-3">
         <p className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
           Guided listening
         </p>
-        <h1 className="font-heading text-5xl font-semibold">Accelerando</h1>
-        <p className="text-muted-foreground">
-          Listen with AI-annotated timelines, reflect on what you hear, and
-          discover what to explore next — with reasoning, not just a playlist.
+        <p className="font-heading text-3xl font-semibold tracking-tight text-balance">
+          Listen with annotated timelines, then discover what to hear next —
+          with reasoning, not just a playlist.
         </p>
       </header>
 
@@ -103,7 +94,7 @@ export function HomePageClient({ pieces }: HomePageClientProps) {
       {isFirstVisit ? (
         <EmptyPanel
           title="Your listening journey starts here"
-          description="Start with a featured recording below, or browse hundreds of Open Opus works in the library. Reflect after you listen — Accelerando will suggest what to explore next."
+          description="Start with a featured recording below, or browse the library. Reflect after you listen — Accelerando will suggest what to explore next."
           action={
             <Link href="/library" className={cn(buttonVariants({ size: "sm" }))}>
               Browse library
@@ -112,22 +103,22 @@ export function HomePageClient({ pieces }: HomePageClientProps) {
         />
       ) : null}
 
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)] lg:items-start">
-        <div className="space-y-8">
+      <div className="grid gap-12 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)] lg:items-start">
+        <div className="space-y-10">
           {!isLoadingActivity && inProgressPiece ? (
-            <section className="space-y-3">
-              <h2 className="font-heading text-sm font-semibold tracking-widest uppercase">
+            <section>
+              <h2 className="mb-1 text-xs font-semibold tracking-widest text-muted-foreground uppercase">
                 Continue listening
               </h2>
               <PieceChip piece={inProgressPiece} actionLabel="Resume" />
             </section>
           ) : null}
 
-          <section className="space-y-3">
-            <h2 className="font-heading text-sm font-semibold tracking-widest uppercase">
+          <section>
+            <h2 className="mb-1 text-xs font-semibold tracking-widest text-muted-foreground uppercase">
               Start here
             </h2>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div>
               {pieces.map((piece) => (
                 <PieceChip key={piece.id} piece={piece} />
               ))}
@@ -136,38 +127,32 @@ export function HomePageClient({ pieces }: HomePageClientProps) {
         </div>
 
         {!isLoadingActivity && recentRecommendations.length > 0 ? (
-          <section className="space-y-3 lg:sticky lg:top-8">
-            <h2 className="font-heading text-sm font-semibold tracking-widest uppercase">
+          <section className="lg:sticky lg:top-8">
+            <h2 className="mb-4 text-xs font-semibold tracking-widest text-muted-foreground uppercase">
               Recent recommendations
             </h2>
-            <div className="grid gap-3">
+            <div className="divide-y divide-border border-y border-border">
               {recentRecommendations.map((recommendation) => (
-                <Card key={recommendation.id}>
-                  <CardHeader>
-                    <CardDescription>
-                      From{" "}
-                      {getPieceById(recommendation.fromPieceId)?.composer ??
-                        "a previous piece"}
-                    </CardDescription>
-                    <CardTitle>
-                      {recommendation.toPiece.composer} —{" "}
-                      {recommendation.toPiece.title}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="line-clamp-3 text-sm leading-relaxed text-muted-foreground">
-                      {recommendation.reasoning}
-                    </p>
-                  </CardContent>
-                  <CardFooter>
-                    <Link
-                      href={`/listen/${recommendation.toPiece.id}`}
-                      className={cn(buttonVariants({ size: "sm" }))}
-                    >
-                      Start listening
-                    </Link>
-                  </CardFooter>
-                </Card>
+                <article key={recommendation.id} className="space-y-3 py-5">
+                  <p className="text-[0.65rem] font-semibold tracking-widest text-muted-foreground uppercase">
+                    From{" "}
+                    {getPieceById(recommendation.fromPieceId)?.composer ??
+                      "a previous piece"}
+                  </p>
+                  <h3 className="font-heading text-xl font-semibold tracking-tight text-balance">
+                    {recommendation.toPiece.composer} —{" "}
+                    {recommendation.toPiece.title}
+                  </h3>
+                  <p className="line-clamp-3 text-sm leading-relaxed text-muted-foreground">
+                    {recommendation.reasoning}
+                  </p>
+                  <Link
+                    href={`/listen/${recommendation.toPiece.id}`}
+                    className="inline-block text-xs font-semibold tracking-widest uppercase underline-offset-4 hover:underline"
+                  >
+                    Start listening
+                  </Link>
+                </article>
               ))}
             </div>
           </section>

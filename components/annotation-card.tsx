@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { Badge } from "@/components/ui/badge";
 import { getAnnotationById } from "@/lib/annotations";
 import { formatTime } from "@/lib/format-time";
 import { cn } from "@/lib/utils";
@@ -44,7 +43,7 @@ export function AnnotationCard({ annotations }: AnnotationCardProps) {
   if (!displayed) {
     return (
       <div
-        className="rounded-lg border border-dashed border-border/80 px-4 py-5 text-sm text-muted-foreground"
+        className="border-y border-dashed border-border py-8 text-sm text-muted-foreground"
         aria-live="polite"
       >
         Play the recording — guided notes appear as landmarks pass.
@@ -55,21 +54,21 @@ export function AnnotationCard({ annotations }: AnnotationCardProps) {
   return (
     <article
       className={cn(
-        "space-y-3 transition-opacity duration-300 ease-out",
+        "max-w-[40rem] space-y-5 transition-opacity duration-300 ease-out",
         isVisible ? "opacity-100" : "opacity-0",
       )}
       aria-live="polite"
     >
-      <div className="flex flex-wrap items-center gap-2">
-        <Badge variant="secondary">{displayed.category}</Badge>
-        <span className="font-mono text-xs text-muted-foreground tabular-nums">
+      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-[0.65rem] font-semibold tracking-widest text-muted-foreground uppercase">
+        <span>{displayed.category}</span>
+        <span className="font-mono tracking-normal normal-case tabular-nums">
           {formatTime(displayed.timestampSeconds)}
         </span>
       </div>
-      <h2 className="font-heading text-2xl font-semibold tracking-tight">
+      <h2 className="font-heading text-4xl font-semibold tracking-tight text-balance">
         {displayed.label}
       </h2>
-      <p className="text-[0.95rem] leading-relaxed text-foreground/90">
+      <p className="text-lg leading-[1.75] text-foreground/90">
         {displayed.note}
       </p>
     </article>

@@ -1,14 +1,6 @@
 import type { ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 interface LoadingPanelProps {
@@ -23,18 +15,19 @@ export function LoadingPanel({
   className,
 }: LoadingPanelProps) {
   return (
-    <Card className={cn("border-dashed", className)} aria-live="polite">
-      <CardHeader>
-        <CardTitle className="text-base">{title}</CardTitle>
-        {description ? <CardDescription>{description}</CardDescription> : null}
-      </CardHeader>
-      <CardContent>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <span className="size-4 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground" />
-          Working…
-        </div>
-      </CardContent>
-    </Card>
+    <div
+      className={cn("space-y-2 border-y border-dashed border-border py-5", className)}
+      aria-live="polite"
+    >
+      <p className="font-heading text-lg font-semibold tracking-tight">{title}</p>
+      {description ? (
+        <p className="text-sm text-muted-foreground">{description}</p>
+      ) : null}
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <span className="size-4 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground" />
+        Working…
+      </div>
+    </div>
   );
 }
 
@@ -54,24 +47,20 @@ export function ErrorPanel({
   className,
 }: ErrorPanelProps) {
   return (
-    <Card
-      className={cn("border-destructive/30 bg-destructive/5", className)}
+    <div
+      className={cn("space-y-3 border-y border-destructive/30 py-5", className)}
       role="alert"
     >
-      <CardHeader>
-        <CardTitle className="text-base text-destructive">{title}</CardTitle>
-        <CardDescription className="text-destructive/90">
-          {description}
-        </CardDescription>
-      </CardHeader>
+      <p className="font-heading text-lg font-semibold tracking-tight text-destructive">
+        {title}
+      </p>
+      <p className="text-sm text-destructive/90">{description}</p>
       {onRetry ? (
-        <CardFooter>
-          <Button type="button" size="sm" variant="outline" onClick={onRetry}>
-            {retryLabel}
-          </Button>
-        </CardFooter>
+        <Button type="button" size="sm" variant="outline" onClick={onRetry}>
+          {retryLabel}
+        </Button>
       ) : null}
-    </Card>
+    </div>
   );
 }
 
@@ -89,12 +78,12 @@ export function EmptyPanel({
   className,
 }: EmptyPanelProps) {
   return (
-    <Card className={cn("border-dashed", className)}>
-      <CardHeader>
-        <CardTitle className="text-base">{title}</CardTitle>
-        <CardDescription>{description}</CardDescription>
-      </CardHeader>
-      {action ? <CardFooter>{action}</CardFooter> : null}
-    </Card>
+    <div
+      className={cn("space-y-3 border-y border-dashed border-border py-5", className)}
+    >
+      <p className="font-heading text-lg font-semibold tracking-tight">{title}</p>
+      <p className="max-w-prose text-sm text-muted-foreground">{description}</p>
+      {action ? <div>{action}</div> : null}
+    </div>
   );
 }

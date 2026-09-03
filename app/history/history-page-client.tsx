@@ -47,15 +47,15 @@ export function HistoryPageClient() {
 
   return (
     <AppShell>
-      <header className="max-w-3xl space-y-2">
+      <header className="max-w-2xl space-y-2">
         <p className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
           Your journey
         </p>
-        <h1 className="font-heading text-4xl font-semibold">
+        <h1 className="font-heading text-4xl font-semibold tracking-tight">
           Listening history
         </h1>
         <p className="text-muted-foreground">
-          Every piece, reflection, and recommendation — the chain of choices
+          Every piece, reflection, and recommendation in the chain of choices
           that shaped what you listened to next.
         </p>
       </header>
