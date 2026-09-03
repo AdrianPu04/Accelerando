@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
-import { Bodoni_Moda, Geist_Mono } from "next/font/google";
+import { Geist_Mono, Libre_Bodoni } from "next/font/google";
 
 import { Providers } from "@/components/providers";
 import { cn } from "@/lib/utils";
 
 import "./globals.css";
 
-const bodoni = Bodoni_Moda({
+const bodoni = Libre_Bodoni({
   subsets: ["latin"],
   variable: "--font-sans",
 });
