@@ -1,6 +1,6 @@
 import { HomePageClient } from "@/app/home-page-client";
-import { getAllPieces } from "@/lib/pieces";
+import { getHomeStartPieces } from "@/lib/pieces";
 
 export default function Home() {
-  return <HomePageClient pieces={getAllPieces()} />;
+  return <HomePageClient pieces={getHomeStartPieces()} />;
 }

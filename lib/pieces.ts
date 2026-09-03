@@ -36,9 +36,25 @@ export function getCuratedPieceById(id: string): Piece | undefined {
   return PIECES.find((piece) => piece.id === id);
 }
 
-/** Curated recordings only (home "Start listening"). */
+/** Catalog work ids featured on the home "Start here" list, in display order. */
+export const HOME_START_PIECE_IDS = [
+  "openopus-16238", // Beethoven — Symphony no. 9
+  "openopus-10164", // Bach — Art of the Fugue
+  "openopus-15562", // Gershwin — Rhapsody in Blue
+  "openopus-24527", // Elgar — Cello Concerto
+  "openopus-22172", // Rachmaninoff — Piano Concerto no. 3
+] as const;
+
+/** Curated recordings only (legacy starters / static params). */
 export function getAllPieces(): Piece[] {
   return PIECES;
+}
+
+/** Home "Start here" list from a fixed featured catalog set. */
+export function getHomeStartPieces(): Piece[] {
+  return HOME_START_PIECE_IDS.map((id) => getPieceById(id)).filter(
+    (piece): piece is Piece => piece !== undefined,
+  );
 }
 
 /** Curated + OpenOpus catalog works that have an attached YouTube recording. */

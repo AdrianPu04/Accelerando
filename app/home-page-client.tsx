@@ -133,7 +133,7 @@ export function HomePageClient({ pieces }: HomePageClientProps) {
       {isFirstVisit ? (
         <EmptyPanel
           title="Your listening journey starts here"
-          description="Start with a curated recording below, or browse hundreds of Open Opus works in the library. Reflect after you listen — Accelerando will suggest what to explore next."
+          description="Start with a featured recording below, or browse hundreds of Open Opus works in the library. Reflect after you listen — Accelerando will suggest what to explore next."
           action={
             <Link href="/library" className={cn(buttonVariants({ size: "sm" }))}>
               Browse library
@@ -144,7 +144,7 @@ export function HomePageClient({ pieces }: HomePageClientProps) {
 
       <section className="space-y-3">
         <h2 className="font-heading text-sm font-semibold tracking-widest uppercase">
-          Start listening
+          Start here
         </h2>
         <div className="grid gap-3">
           {pieces.map((piece) => (
