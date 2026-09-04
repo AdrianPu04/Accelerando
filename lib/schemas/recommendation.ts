@@ -49,5 +49,4 @@ export const recommendStreamEventSchema = z.discriminatedUnion("type", [
 ]);
 
 export type RecommendNextRequest = z.infer<typeof recommendNextRequestSchema>;
-export type SelectPieceResponse = z.infer<typeof selectPieceResponseSchema>;
 export type RecommendStreamEvent = z.infer<typeof recommendStreamEventSchema>;

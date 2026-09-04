@@ -1,5 +1,3 @@
-import type { YouTubePlayer } from "youtube";
-
 declare global {
   interface Window {
     YT: typeof YT;
@@ -7,4 +5,4 @@ declare global {
   }
 }
 
-export type YouTubePlayerInstance = YouTubePlayer;
+export {};

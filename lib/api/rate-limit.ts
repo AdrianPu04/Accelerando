@@ -14,7 +14,7 @@ const RATE_LIMITS = {
   },
 } as const;
 
-export type RateLimitedAction = keyof typeof RATE_LIMITS;
+type RateLimitedAction = keyof typeof RATE_LIMITS;
 
 /** In-memory fallback when service role / RPC is unavailable (local only). */
 const memoryBuckets = new Map<string, { count: number; resetAt: number }>();
@@ -81,7 +81,7 @@ async function hitDurableBucket(
   return true;
 }
 
-export function getRequestIp(request: Request): string {
+function getRequestIp(request: Request): string {
   const forwarded = request.headers.get("x-forwarded-for");
   if (forwarded) {
     const first = forwarded.split(",")[0]?.trim();

@@ -79,14 +79,14 @@ function loadYouTubeIframeApi(): Promise<void> {
   return youtubeApiPromise;
 }
 
-export interface UseYouTubePlayerOptions {
+interface UseYouTubePlayerOptions {
   videoId: string;
   startOffsetSeconds?: number;
   /** Canonical piece duration; clamps timeline when the YouTube video is longer. */
   durationSeconds?: number;
 }
 
-export interface UseYouTubePlayerReturn {
+interface UseYouTubePlayerReturn {
   containerRef: React.RefObject<HTMLDivElement | null>;
   isReady: boolean;
   loadError: string | null;

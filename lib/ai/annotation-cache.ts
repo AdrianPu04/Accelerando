@@ -9,7 +9,7 @@ import {
 import { createServiceClient } from "@/lib/supabase/server";
 import type { Piece } from "@/types";
 
-export function cacheKeyForPiece(piece: Piece): string {
+function cacheKeyForPiece(piece: Piece): string {
   const fingerprint = [
     piece.id,
     piece.youtubeVideoId,

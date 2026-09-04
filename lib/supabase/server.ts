@@ -24,13 +24,3 @@ export function createServiceClient(): SupabaseClient | null {
 
   return serviceClient;
 }
-
-export function requireServiceClient(): SupabaseClient {
-  const client = createServiceClient();
-  if (!client) {
-    throw new Error(
-      "SUPABASE_SERVICE_ROLE_KEY is required for durable AI cache and rate limits",
-    );
-  }
-  return client;
-}

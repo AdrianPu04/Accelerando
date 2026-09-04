@@ -3,7 +3,7 @@ import { z } from "zod";
 import { generateAnnotationsResponseSchema } from "@/lib/schemas/annotation";
 import type { GeneratedAnnotation } from "@/lib/schemas/annotation";
 
-export function parseGenerateAnnotationsResponse(
+function parseGenerateAnnotationsResponse(
   raw: unknown,
 ): GeneratedAnnotation[] {
   return generateAnnotationsResponseSchema.parse(raw).annotations;

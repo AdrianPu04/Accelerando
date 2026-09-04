@@ -28,11 +28,6 @@ export const catalogFileSchema = z.object({
 });
 
 export type CatalogWork = z.infer<typeof catalogWorkSchema>;
-export type CatalogFile = z.infer<typeof catalogFileSchema>;
-
-export function catalogWorkId(openOpusWorkId: string): string {
-  return `openopus-${openOpusWorkId}`;
-}
 
 export function isCatalogWorkPlayable(work: CatalogWork): boolean {
   return Boolean(work.youtubeVideoId && work.durationSeconds);

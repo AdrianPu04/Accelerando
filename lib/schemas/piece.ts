@@ -12,5 +12,3 @@ export const pieceSchema = z.object({
   durationSeconds: z.number().int().positive(),
   openOpusWorkId: z.string().optional(),
 });
-
-export type PieceSchema = z.infer<typeof pieceSchema>;

@@ -9,7 +9,7 @@ export const annotationCategorySchema = z.enum([
   "other",
 ]);
 
-export const generatedAnnotationSchema = z.object({
+const generatedAnnotationSchema = z.object({
   timestampSeconds: z.number().int().nonnegative(),
   label: z.string().min(1),
   note: z.string().min(1),
@@ -24,7 +24,7 @@ export const generateAnnotationsRequestSchema = z.object({
   pieceId: z.string().min(1),
 });
 
-export const annotationSchema = z.object({
+const annotationSchema = z.object({
   id: z.string().min(1),
   pieceId: z.string().min(1),
   timestampSeconds: z.number().int().nonnegative(),
@@ -39,6 +39,3 @@ export const generateAnnotationsApiResponseSchema = z.object({
 });
 
 export type GeneratedAnnotation = z.infer<typeof generatedAnnotationSchema>;
-export type GenerateAnnotationsResponse = z.infer<
-  typeof generateAnnotationsResponseSchema
->;

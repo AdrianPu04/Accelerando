@@ -6,7 +6,7 @@ import { useYouTubePlayer } from "@/hooks/use-youtube-player";
 import { usePlayerStore } from "@/stores/player-store";
 import type { Piece } from "@/types";
 
-export interface AudioPlayerControls {
+interface AudioPlayerControls {
   containerRef: RefObject<HTMLDivElement | null>;
   isReady: boolean;
   loadError: string | null;

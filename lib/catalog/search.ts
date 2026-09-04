@@ -1,6 +1,6 @@
 import type { CatalogWork } from "@/lib/catalog/types";
 
-export interface CatalogFilters {
+interface CatalogFilters {
   query?: string;
   era?: string;
   genre?: string;

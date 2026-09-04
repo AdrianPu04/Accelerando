@@ -1,4 +1,4 @@
-export interface UserMessage {
+interface UserMessage {
   title: string;
   description: string;
 }

@@ -1,8 +1,8 @@
 import type { Piece } from "@/types";
 
 /** Cap guided coverage so very long recordings stay affordable and reliable. */
-export const MAX_GUIDED_DURATION_SECONDS = 45 * 60;
-export const MAX_ANNOTATIONS = 24;
+const MAX_GUIDED_DURATION_SECONDS = 45 * 60;
+const MAX_ANNOTATIONS = 24;
 
 /** Effective listening window for annotation generation. */
 export function guidedDurationSeconds(durationSeconds: number): number {
@@ -10,7 +10,7 @@ export function guidedDurationSeconds(durationSeconds: number): number {
 }
 
 /** Target annotation density: about one every two minutes, bounded for short/long works. */
-export function suggestedAnnotationRange(durationSeconds: number): {
+function suggestedAnnotationRange(durationSeconds: number): {
   min: number;
   max: number;
   guidedSeconds: number;

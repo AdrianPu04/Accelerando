@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-export interface PlayerStore {
+interface PlayerStore {
   pieceId: string | null;
   currentTime: number;
   duration: number;

@@ -8,8 +8,6 @@ import {
   type CatalogWork,
 } from "@/lib/catalog/types";
 
-export type { CatalogFilters } from "@/lib/catalog/search";
-
 const catalog = catalogFileSchema.parse(catalogJson);
 
 export function getAllCatalogWorks(): CatalogWork[] {
