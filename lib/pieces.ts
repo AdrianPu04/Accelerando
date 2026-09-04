@@ -17,11 +17,11 @@ export {
 
 /** Catalog work ids featured on the home "Start here" list, in display order. */
 export const HOME_START_PIECE_IDS = [
-  "beethoven-7-i", // Beethoven — Symphony no. 7, I (~13m)
+  "beethoven-7-i", // Beethoven — Symphony no. 7 (complete)
   "openopus-9688", // Bach — Brandenburg Concerto no. 3 (~12m)
   "openopus-15562", // Gershwin — Rhapsody in Blue (~17m)
   "openopus-24527", // Elgar — Cello Concerto (~30m)
-  "mozart-40-i", // Mozart — Symphony no. 40, I (~8m)
+  "mozart-40-i", // Mozart — Symphony no. 40 (complete)
 ] as const;
 
 /** Curated recordings only (legacy starters / static params). */

@@ -49,7 +49,7 @@ function CuratedPiecePage({ piece }: { piece: Piece }) {
                 Guided listening
               </p>
               <p className="text-sm text-muted-foreground">
-                A curated movement-length recording with synced annotations.
+                A curated complete-symphony recording with synced annotations.
               </p>
             </div>
             <Link href={`/listen/${piece.id}`} className={cn(buttonVariants())}>
