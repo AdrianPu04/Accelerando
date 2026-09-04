@@ -24,7 +24,7 @@ export function RecommendationCard({
   };
 
   return (
-    <section className="max-w-prose space-y-4 border-t border-border pt-8">
+    <section className="animate-fade-rise max-w-prose space-y-4 border-t border-border pt-8">
       <p className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
         Up next
         <span className="mx-2 text-border">·</span>
@@ -41,6 +41,7 @@ export function RecommendationCard({
         size="sm"
         disabled={!isComplete}
         onClick={handleStartListening}
+        className="transition-opacity duration-300"
       >
         {isComplete ? "Start listening" : "Preparing…"}
       </Button>

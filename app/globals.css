@@ -129,3 +129,40 @@
     @apply font-sans;
   }
 }
+
+@layer utilities {
+  @keyframes accelerando-fade-rise {
+    from {
+      opacity: 0;
+      transform: translateY(0.4rem);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes accelerando-fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  .animate-fade-rise {
+    animation: accelerando-fade-rise 320ms ease-out both;
+  }
+
+  .animate-fade-in {
+    animation: accelerando-fade-in 280ms ease-out both;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-fade-rise,
+    .animate-fade-in {
+      animation: none;
+    }
+  }
+}

@@ -77,7 +77,7 @@ export function AnnotationTimeline({
                 key={annotation.id}
                 type="button"
                 className={cn(
-                  "absolute bottom-0 z-10 flex -translate-x-1/2 flex-col items-center justify-end outline-none transition-[height,opacity] duration-300",
+                  "absolute bottom-0 z-10 flex -translate-x-1/2 flex-col items-center justify-end outline-none transition-[height,opacity,transform] duration-300 ease-out",
                   stemHeight,
                   isActive ? "z-20 opacity-100" : "opacity-55 hover:opacity-100",
                 )}
@@ -88,14 +88,14 @@ export function AnnotationTimeline({
               >
                 <span
                   className={cn(
-                    "w-px flex-1 rounded-full transition-[width] duration-300",
+                    "w-px flex-1 rounded-full transition-[width,background-color] duration-300 ease-out",
                     styles.tick,
                     isActive && "w-0.5",
                   )}
                 />
                 <span
                   className={cn(
-                    "mt-0.5 size-1.5 rounded-full transition-transform duration-300",
+                    "mt-0.5 size-1.5 rounded-full transition-transform duration-300 ease-out",
                     styles.dot,
                     isActive && "scale-125",
                   )}

@@ -2,6 +2,7 @@
 
 import { ErrorPanel, LoadingPanel } from "@/components/status-panel";
 import { formatAiError } from "@/lib/user-messages";
+import { cn } from "@/lib/utils";
 
 interface RecommendationRevealProps {
   text: string;
@@ -20,16 +21,20 @@ export function RecommendationReveal({
     const formatted = formatAiError(error);
 
     return (
-      <ErrorPanel title={formatted.title} description={formatted.description} />
+      <div className="animate-fade-rise">
+        <ErrorPanel title={formatted.title} description={formatted.description} />
+      </div>
     );
   }
 
   if (isLoading && !text) {
     return (
-      <LoadingPanel
-        title="Finding your next listen"
-        description="Considering your reflection and what you noticed…"
-      />
+      <div className="animate-fade-in">
+        <LoadingPanel
+          title="Finding your next listen"
+          description="Considering your reflection and what you noticed…"
+        />
+      </div>
     );
   }
 
@@ -38,11 +43,14 @@ export function RecommendationReveal({
   }
 
   return (
-    <article className="max-w-prose space-y-3" aria-live="polite">
+    <article
+      className={cn("max-w-prose space-y-3", !isStreaming && "animate-fade-rise")}
+      aria-live="polite"
+    >
       <p className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
         Why this piece
         {isStreaming ? (
-          <span className="ml-2 font-normal normal-case tracking-normal">
+          <span className="ml-2 animate-fade-in font-normal normal-case tracking-normal">
             · writing…
           </span>
         ) : null}

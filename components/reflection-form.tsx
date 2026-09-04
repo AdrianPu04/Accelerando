@@ -27,7 +27,7 @@ export function ReflectionForm({
 
   if (submittedReflection) {
     return (
-      <section className="max-w-prose space-y-3 border-t border-border pt-8">
+      <section className="animate-fade-rise max-w-prose space-y-3 border-t border-border pt-8">
         <p className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
           Your reflection
         </p>
@@ -53,7 +53,7 @@ export function ReflectionForm({
   };
 
   return (
-    <section className="max-w-prose space-y-4 border-t border-border pt-8">
+    <section className="animate-fade-rise max-w-prose space-y-4 border-t border-border pt-8">
       {saveError ? (
         <ErrorPanel
           title="Could not save reflection"

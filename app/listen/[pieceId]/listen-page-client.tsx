@@ -315,7 +315,7 @@ export function ListenPageClient({ piece }: ListenPageClientProps) {
           ) : null}
 
           {reflection && annotations.length > 0 ? (
-            <section className="space-y-8 border-t border-border pt-10">
+            <section className="animate-fade-in space-y-8 border-t border-border pt-10">
               <RecommendationReveal
                 text={reasoning}
                 isLoading={isRecommendationLoading}
