@@ -1,6 +1,7 @@
-import { ApiAuthError } from "@/lib/api/require-auth";
+import "server-only";
 
-const rateLimitBuckets = new Map<string, { count: number; resetAt: number }>();
+import { ApiAuthError } from "@/lib/api/require-auth";
+import { createServiceClient } from "@/lib/supabase/server";
 
 const RATE_LIMITS = {
   annotations: {
@@ -15,16 +16,15 @@ const RATE_LIMITS = {
 
 export type RateLimitedAction = keyof typeof RATE_LIMITS;
 
-function hitBucket(
-  key: string,
-  limit: number,
-  windowMs: number,
-): void {
+/** In-memory fallback when service role / RPC is unavailable (local only). */
+const memoryBuckets = new Map<string, { count: number; resetAt: number }>();
+
+function hitMemoryBucket(key: string, limit: number, windowMs: number): void {
   const now = Date.now();
-  const current = rateLimitBuckets.get(key);
+  const current = memoryBuckets.get(key);
 
   if (!current || now >= current.resetAt) {
-    rateLimitBuckets.set(key, { count: 1, resetAt: now + windowMs });
+    memoryBuckets.set(key, { count: 1, resetAt: now + windowMs });
     return;
   }
 
@@ -39,6 +39,48 @@ function hitBucket(
   current.count += 1;
 }
 
+async function hitDurableBucket(
+  key: string,
+  limit: number,
+  windowMs: number,
+): Promise<boolean> {
+  const supabase = createServiceClient();
+  if (!supabase) {
+    hitMemoryBucket(key, limit, windowMs);
+    return false;
+  }
+
+  const { data, error } = await supabase.rpc("hit_rate_limit", {
+    p_key: key,
+    p_limit: limit,
+    p_window_ms: windowMs,
+  });
+
+  if (error) {
+    console.error("Durable rate limit failed, using memory fallback:", error.message);
+    hitMemoryBucket(key, limit, windowMs);
+    return false;
+  }
+
+  const result = data as {
+    allowed?: boolean;
+    retry_after_ms?: number;
+  } | null;
+
+  if (!result?.allowed) {
+    const retryAfterSeconds = Math.max(
+      1,
+      Math.ceil((result?.retry_after_ms ?? 60_000) / 1000),
+    );
+    throw new ApiAuthError(
+      `Rate limit exceeded. Try again in ${retryAfterSeconds}s.`,
+      429,
+    );
+  }
+
+  return true;
+}
+
 export function getRequestIp(request: Request): string {
   const forwarded = request.headers.get("x-forwarded-for");
   if (forwarded) {
@@ -51,14 +93,22 @@ export function getRequestIp(request: Request): string {
   return request.headers.get("x-real-ip")?.trim() || "unknown";
 }
 
-export function enforceRateLimits(
+export async function enforceRateLimits(
   request: Request,
   userId: string,
   action: RateLimitedAction,
-): void {
+): Promise<void> {
   const config = RATE_LIMITS[action];
   const ip = getRequestIp(request);
 
-  hitBucket(`user:${userId}:${action}`, config.user.limit, config.user.windowMs);
-  hitBucket(`ip:${ip}:${action}`, config.ip.limit, config.ip.windowMs);
+  await hitDurableBucket(
+    `user:${userId}:${action}`,
+    config.user.limit,
+    config.user.windowMs,
+  );
+  await hitDurableBucket(
+    `ip:${ip}:${action}`,
+    config.ip.limit,
+    config.ip.windowMs,
+  );
 }

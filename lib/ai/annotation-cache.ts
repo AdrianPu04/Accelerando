@@ -1,18 +1,15 @@
 import "server-only";
 
 import { createHash } from "node:crypto";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
-import path from "node:path";
 
 import {
   generateAnnotationsResponseSchema,
   type GeneratedAnnotation,
 } from "@/lib/schemas/annotation";
+import { createServiceClient } from "@/lib/supabase/server";
 import type { Piece } from "@/types";
 
-const CACHE_DIR = path.join(process.cwd(), "data", "annotation-cache");
-
-function cacheKeyForPiece(piece: Piece): string {
+export function cacheKeyForPiece(piece: Piece): string {
   const fingerprint = [
     piece.id,
     piece.youtubeVideoId,
@@ -24,16 +21,34 @@ function cacheKeyForPiece(piece: Piece): string {
   return createHash("sha256").update(fingerprint).digest("hex").slice(0, 32);
 }
 
-function cachePath(key: string): string {
-  return path.join(CACHE_DIR, `${key}.json`);
-}
-
 export async function readSharedAnnotationCache(
   piece: Piece,
 ): Promise<GeneratedAnnotation[] | null> {
+  const supabase = createServiceClient();
+  if (!supabase) {
+    return null;
+  }
+
+  const cacheKey = cacheKeyForPiece(piece);
+  const { data, error } = await supabase
+    .from("shared_annotation_cache")
+    .select("annotations")
+    .eq("cache_key", cacheKey)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Annotation cache read failed:", error.message);
+    return null;
+  }
+
+  if (!data?.annotations) {
+    return null;
+  }
+
   try {
-    const raw = await readFile(cachePath(cacheKeyForPiece(piece)), "utf8");
-    const parsed = generateAnnotationsResponseSchema.parse(JSON.parse(raw));
+    const parsed = generateAnnotationsResponseSchema.parse({
+      annotations: data.annotations,
+    });
     return parsed.annotations;
   } catch {
     return null;
@@ -44,10 +59,20 @@ export async function writeSharedAnnotationCache(
   piece: Piece,
   annotations: GeneratedAnnotation[],
 ): Promise<void> {
-  await mkdir(CACHE_DIR, { recursive: true });
-  await writeFile(
-    cachePath(cacheKeyForPiece(piece)),
-    JSON.stringify({ annotations }, null, 2),
-    "utf8",
-  );
+  const supabase = createServiceClient();
+  if (!supabase) {
+    return;
+  }
+
+  const cacheKey = cacheKeyForPiece(piece);
+  const { error } = await supabase.from("shared_annotation_cache").upsert({
+    cache_key: cacheKey,
+    piece_id: piece.id,
+    annotations,
+    updated_at: new Date().toISOString(),
+  });
+
+  if (error) {
+    throw new Error(`Annotation cache write failed: ${error.message}`);
+  }
 }

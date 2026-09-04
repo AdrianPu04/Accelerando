@@ -20,7 +20,7 @@ import { generateAnnotationsRequestSchema } from "@/lib/schemas/annotation";
 export async function POST(request: Request) {
   try {
     const { userId } = await requireApiUser(request);
-    enforceRateLimits(request, userId, "annotations");
+    await enforceRateLimits(request, userId, "annotations");
 
     let json: unknown;
 

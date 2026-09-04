@@ -8,10 +8,19 @@ const DEFAULT_LIMIT = 40;
  */
 export function sampleRecommendCandidates(
   pieces: Piece[],
-  options: { excludeId?: string; limit?: number } = {},
+  options: {
+    excludeId?: string;
+    excludeIds?: Iterable<string>;
+    limit?: number;
+  } = {},
 ): Piece[] {
   const limit = options.limit ?? DEFAULT_LIMIT;
-  const pool = pieces.filter((piece) => piece.id !== options.excludeId);
+  const excluded = new Set<string>(options.excludeIds ?? []);
+  if (options.excludeId) {
+    excluded.add(options.excludeId);
+  }
+
+  const pool = pieces.filter((piece) => !excluded.has(piece.id));
 
   if (pool.length <= limit) {
     return pool;

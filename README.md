@@ -41,9 +41,13 @@ npm install
 cp .env.example .env.local
 ```
 
-3. In the Supabase dashboard → **SQL Editor**, run [`supabase/migrations/001_initial.sql`](supabase/migrations/001_initial.sql).
+3. In the Supabase dashboard → **SQL Editor**, run both migrations in order:
+   - [`supabase/migrations/001_initial.sql`](supabase/migrations/001_initial.sql)
+   - [`supabase/migrations/002_ai_cache_and_rate_limits.sql`](supabase/migrations/002_ai_cache_and_rate_limits.sql)
 
-4. Start the app:
+4. Add `SUPABASE_SERVICE_ROLE_KEY` from Supabase → **Settings → API** (server-only; never expose to the client).
+
+5. Start the app:
 
 ```bash
 npm run dev
@@ -62,6 +66,7 @@ npm run start   # serve production build
 |---|---|---|
 | `NEXT_PUBLIC_SUPABASE_URL` | Yes | Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Supabase anon / publishable key |
+| `SUPABASE_SERVICE_ROLE_KEY` | Recommended | Durable shared annotation cache + rate limits (server only) |
 | `GEMINI_API_KEY` | One of Gemini / Anthropic | Google AI for annotations + recommendations |
 | `ANTHROPIC_API_KEY` | One of Gemini / Anthropic | Claude for annotations + recommendations |
 | `ANNOTATION_PROVIDER` | No | Force `gemini` or `anthropic` |
@@ -92,10 +97,10 @@ npm run start   # serve production build
 
 - **Catalog is server-only** — `data/catalog.json` is not shipped to the client; the library and piece lookups go through the server / APIs.
 - **YouTube embeds** avoid hosting or licensing recordings yourself. Each playable catalog work maps to one attached video; annotation times are relative to that recording.
-- **Shared annotation cache** — generated notes are stored under `data/annotation-cache/` (gitignored) and reused across users for the same recording fingerprint.
-- **AI routes** require a Bearer JWT from anonymous Supabase auth and are rate-limited per user **and** IP.
+- **Shared annotation cache** — generated notes are stored in Supabase (`shared_annotation_cache`) and reused across users for the same recording fingerprint. Requires `SUPABASE_SERVICE_ROLE_KEY`.
+- **AI routes** require a Bearer JWT from anonymous Supabase auth and are rate-limited per user **and** IP via durable Supabase buckets (with an in-memory fallback if the service role is unset).
 - **Long works** — annotation density is capped (guided window + max note count) to keep generation reliable and affordable.
-- **Recommendations** sample a diversified candidate pool across eras/composers, not just the first rows of the catalog.
+- **Recommendations** sample a diversified candidate pool across eras/composers and exclude pieces the user has already listened to.
 
 ## Home starters
 

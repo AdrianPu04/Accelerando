@@ -10,6 +10,7 @@ import {
 import { enforceRateLimits } from "@/lib/api/rate-limit";
 import type { RecommendNextContext } from "@/lib/prompts/recommend-next";
 import { getAllPlayablePieces, getPieceById } from "@/lib/pieces";
+import { getHeardPieceIds } from "@/lib/recommend/heard-pieces";
 import { sampleRecommendCandidates } from "@/lib/recommend/sample-candidates";
 import { recommendNextRequestSchema } from "@/lib/schemas/recommendation";
 import type { Annotation, Piece } from "@/types";
@@ -27,12 +28,28 @@ function encodeEvent(event: StreamEvent): Uint8Array {
 function buildContext(
   piece: Piece,
   body: z.infer<typeof recommendNextRequestSchema>,
+  excludeIds: Set<string>,
 ): RecommendNextContext {
   const annotations: Annotation[] = body.annotations.map((annotation, index) => ({
     id: `${body.pieceId}-req-${index + 1}`,
     pieceId: body.pieceId,
     ...annotation,
   }));
+
+  excludeIds.add(piece.id);
+
+  let catalog = sampleRecommendCandidates(getAllPlayablePieces(), {
+    excludeIds,
+    limit: 40,
+  });
+
+  // If the listener has heard almost everything sampled away, still recommend.
+  if (catalog.length === 0) {
+    catalog = sampleRecommendCandidates(getAllPlayablePieces(), {
+      excludeId: piece.id,
+      limit: 40,
+    });
+  }
 
   return {
     piece,
@@ -43,17 +60,14 @@ function buildContext(
       createdAt: body.reflection.createdAt,
     },
     annotations,
-    catalog: sampleRecommendCandidates(getAllPlayablePieces(), {
-      excludeId: piece.id,
-      limit: 40,
-    }),
+    catalog,
   };
 }
 
 export async function POST(request: Request) {
   try {
     const { userId } = await requireApiUser(request);
-    enforceRateLimits(request, userId, "recommendations");
+    await enforceRateLimits(request, userId, "recommendations");
 
     let json: unknown;
 
@@ -70,7 +84,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Piece not found" }, { status: 404 });
     }
 
-    const context = buildContext(piece, body);
+    const heardPieceIds = await getHeardPieceIds(userId);
+    const context = buildContext(piece, body, heardPieceIds);
 
     if (context.catalog.length === 0) {
       return NextResponse.json(
