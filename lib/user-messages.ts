@@ -21,7 +21,7 @@ export function formatAiError(raw: string): UserMessage {
     return {
       title: "AI rate limit reached",
       description:
-        "You've hit the free-tier limit for this model. Wait a minute and retry, or try a different GEMINI_MODEL in your env.",
+        "You've hit the free-tier limit for this model. Wait a minute and try again.",
     };
   }
 

@@ -1,50 +1,105 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 
 import { AppShell } from "@/components/app-shell";
 import { CatalogWorkRow } from "@/components/catalog-work-row";
-import { EmptyPanel } from "@/components/status-panel";
-import { filterCatalogWorks } from "@/lib/catalog/search";
+import { EmptyPanel, LoadingPanel } from "@/components/status-panel";
 import type { CatalogWork } from "@/lib/catalog/types";
 
 interface LibraryPageClientProps {
-  works: CatalogWork[];
+  initialWorks: CatalogWork[];
+  initialTotal: number;
   eras: string[];
   genres: string[];
   composers: string[];
-  playableByOpenOpusId: Record<string, string>;
+  initialPlayableByOpenOpusId: Record<string, string>;
 }
 
 const fieldClassName =
   "w-full border-0 border-b border-input bg-transparent px-0 py-2 text-sm outline-none transition-colors focus-visible:border-foreground";
 
+interface CatalogSearchResponse {
+  total: number;
+  works: CatalogWork[];
+  playableByOpenOpusId: Record<string, string>;
+}
+
 export function LibraryPageClient({
-  works,
+  initialWorks,
+  initialTotal,
   eras,
   genres,
   composers,
-  playableByOpenOpusId,
+  initialPlayableByOpenOpusId,
 }: LibraryPageClientProps) {
   const [query, setQuery] = useState("");
   const [era, setEra] = useState("");
   const [genre, setGenre] = useState("");
   const [composer, setComposer] = useState("");
   const [recommendedOnly, setRecommendedOnly] = useState(false);
+  const [works, setWorks] = useState(initialWorks);
+  const [total, setTotal] = useState(initialTotal);
+  const [playableByOpenOpusId, setPlayableByOpenOpusId] = useState(
+    initialPlayableByOpenOpusId,
+  );
+  const [error, setError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
 
-  const results = useMemo(() => {
-    return filterCatalogWorks(works, {
-      query,
-      era: era || undefined,
-      genre: genre || undefined,
-      composer: composer || undefined,
-      recommendedOnly,
-    });
-  }, [composer, era, genre, query, recommendedOnly, works]);
+  useEffect(() => {
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => {
+      startTransition(async () => {
+        try {
+          const params = new URLSearchParams();
+          if (query.trim()) {
+            params.set("q", query.trim());
+          }
+          if (era) {
+            params.set("era", era);
+          }
+          if (genre) {
+            params.set("genre", genre);
+          }
+          if (composer) {
+            params.set("composer", composer);
+          }
+          if (recommendedOnly) {
+            params.set("recommendedOnly", "1");
+          }
+          params.set("limit", "100");
 
-  const playableCount = works.filter(
-    (work) => playableByOpenOpusId[work.openOpusWorkId],
-  ).length;
+          const response = await fetch(`/api/catalog/search?${params}`, {
+            signal: controller.signal,
+          });
+
+          if (!response.ok) {
+            throw new Error(`Search failed (${response.status})`);
+          }
+
+          const data = (await response.json()) as CatalogSearchResponse;
+          setWorks(data.works);
+          setTotal(data.total);
+          setPlayableByOpenOpusId(data.playableByOpenOpusId);
+          setError(null);
+        } catch (searchError) {
+          if (controller.signal.aborted) {
+            return;
+          }
+
+          console.error("Catalog search failed:", searchError);
+          setError("Could not refresh results. Try again.");
+        }
+      });
+    }, 200);
+
+    return () => {
+      controller.abort();
+      window.clearTimeout(timeoutId);
+    };
+  }, [composer, era, genre, query, recommendedOnly]);
+
+  const playableCount = Object.keys(playableByOpenOpusId).length;
 
   return (
     <AppShell>
@@ -57,13 +112,13 @@ export function LibraryPageClient({
             Library
           </h1>
           <p className="text-muted-foreground">
-            {works.length.toLocaleString()} works from Open Opus ·{" "}
-            {playableCount.toLocaleString()} playable
+            Open Opus catalog · {playableCount.toLocaleString()} playable in
+            current results
           </p>
         </div>
       </header>
 
-      <section className="grid gap-x-6 gap-y-3 border-b border-border pb-6 lg:grid-cols-4">
+      <section className="grid gap-x-6 gap-y-3 border-b border-border pb-6 sm:grid-cols-2 lg:grid-cols-4">
         <label className="sr-only" htmlFor="catalog-search">
           Search catalog
         </label>
@@ -130,38 +185,52 @@ export function LibraryPageClient({
 
       <section>
         <p className="mb-3 text-xs font-semibold tracking-widest text-muted-foreground uppercase">
-          {results.length.toLocaleString()} works
+          {total.toLocaleString()} works
+          {isPending ? " · updating…" : ""}
         </p>
 
-        {results.length === 0 ? (
+        {error ? (
+          <EmptyPanel title="Search unavailable" description={error} />
+        ) : null}
+
+        {!error && isPending && works.length === 0 ? (
+          <LoadingPanel
+            title="Searching catalog"
+            description="Filtering works…"
+          />
+        ) : null}
+
+        {!error && works.length === 0 && !isPending ? (
           <EmptyPanel
             title="No works match"
             description="Try a broader search, or clear era/genre filters."
           />
-        ) : (
+        ) : null}
+
+        {!error && works.length > 0 ? (
           <div>
-            <div className="mb-1 grid grid-cols-[10rem_minmax(0,1fr)_8rem_7rem_9rem] gap-4 border-b border-border pb-2 text-[0.65rem] font-semibold tracking-widest text-muted-foreground uppercase">
+            <div className="mb-1 hidden grid-cols-[10rem_minmax(0,1fr)_8rem_7rem_9rem] gap-4 border-b border-border pb-2 text-[0.65rem] font-semibold tracking-widest text-muted-foreground uppercase lg:grid">
               <span>Composer</span>
               <span>Title</span>
               <span>Era</span>
               <span>Genre</span>
               <span className="text-right"> </span>
             </div>
-            {results.slice(0, 100).map((work) => (
+            {works.map((work) => (
               <CatalogWorkRow
                 key={work.id}
                 work={work}
                 playablePieceId={playableByOpenOpusId[work.openOpusWorkId]}
               />
             ))}
-            {results.length > 100 ? (
+            {total > works.length ? (
               <p className="py-4 text-sm text-muted-foreground">
-                Showing first 100 of {results.length.toLocaleString()}. Refine
-                your search to narrow results.
+                Showing first {works.length.toLocaleString()} of{" "}
+                {total.toLocaleString()}. Refine your search to narrow results.
               </p>
             ) : null}
           </div>
-        )}
+        ) : null}
       </section>
     </AppShell>
   );

@@ -204,6 +204,8 @@ export function ListenPageClient({ piece }: ListenPageClientProps) {
           <AudioPlayer
             containerRef={player.containerRef}
             isReady={player.isReady}
+            loadError={player.loadError}
+            onRetry={player.retry}
           />
 
           <div className="flex flex-wrap items-center gap-3">

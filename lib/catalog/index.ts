@@ -1,3 +1,5 @@
+import "server-only";
+
 import catalogJson from "@/data/catalog.json";
 
 import { filterCatalogWorks } from "@/lib/catalog/search";
@@ -7,7 +9,6 @@ import {
 } from "@/lib/catalog/types";
 
 export type { CatalogFilters } from "@/lib/catalog/search";
-export { filterCatalogWorks } from "@/lib/catalog/search";
 
 const catalog = catalogFileSchema.parse(catalogJson);
 
@@ -17,14 +18,6 @@ export function getAllCatalogWorks(): CatalogWork[] {
 
 export function getCatalogWorkById(id: string): CatalogWork | undefined {
   return getAllCatalogWorks().find((work) => work.id === id);
-}
-
-export function getCatalogWorkByOpenOpusId(
-  openOpusWorkId: string,
-): CatalogWork | undefined {
-  return getAllCatalogWorks().find(
-    (work) => work.openOpusWorkId === openOpusWorkId,
-  );
 }
 
 export function getCatalogEras(): string[] {

@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import { getPieceById } from "@/lib/pieces";
+import { getCuratedPieceById } from "@/lib/curated-pieces";
+import { fetchPieceById } from "@/lib/pieces/client";
 import {
   rowToAnnotation,
   rowToRecommendation,
@@ -93,11 +94,11 @@ async function fetchRecommendations(
   return (data ?? []) as RecommendationRow[];
 }
 
-function resolvePieceForSession(
+async function resolvePieceForSession(
   pieceId: string,
   recommendations: Recommendation[],
-): Piece | null {
-  const curated = getPieceById(pieceId);
+): Promise<Piece | null> {
+  const curated = getCuratedPieceById(pieceId);
   if (curated) {
     return curated;
   }
@@ -108,7 +109,11 @@ function resolvePieceForSession(
     }
   }
 
-  return null;
+  try {
+    return await fetchPieceById(pieceId);
+  } catch {
+    return null;
+  }
 }
 
 export function createSupabaseStorage(
@@ -176,12 +181,15 @@ export function createSupabaseStorage(
       const recommendationList = [...recommendations.values()];
       const inProgress = await this.getInProgressSession();
 
-      return sessionRows
-        .map((row) => {
+      const history = await Promise.all(
+        sessionRows.map(async (row) => {
           const session = rowToSession(row);
           return {
             session,
-            piece: resolvePieceForSession(session.pieceId, recommendationList),
+            piece: await resolvePieceForSession(
+              session.pieceId,
+              recommendationList,
+            ),
             reflection: session.reflectionId
               ? (reflections.get(session.reflectionId) ?? null)
               : null,
@@ -190,10 +198,12 @@ export function createSupabaseStorage(
               : null,
             isInProgress: inProgress?.id === session.id,
           } satisfies SessionWithDetails;
-        })
-        .sort((a, b) =>
-          b.session.listenedAt.localeCompare(a.session.listenedAt),
-        );
+        }),
+      );
+
+      return history.sort((a, b) =>
+        b.session.listenedAt.localeCompare(a.session.listenedAt),
+      );
     },
 
     async getOrCreateCurrentSession(pieceId: string) {
@@ -335,14 +345,6 @@ export function createSupabaseStorage(
       if (sessionError) {
         throw sessionError;
       }
-    },
-
-    beginListeningToPiece(pieceId: string) {
-      if (typeof window === "undefined") {
-        return;
-      }
-
-      sessionStorage.removeItem(currentSessionKey(pieceId));
     },
 
     async getCachedAnnotations(pieceId: string) {

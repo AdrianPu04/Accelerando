@@ -7,7 +7,7 @@ import type { Piece } from "@/types";
 
 import { AnnotationProviderError, type AnnotationProvider } from "../types";
 
-const DEFAULT_MODEL = "gemini-3.6-flash";
+const DEFAULT_MODEL = "gemini-3.5-flash-lite";
 
 export const geminiProvider: AnnotationProvider = {
   name: "gemini",

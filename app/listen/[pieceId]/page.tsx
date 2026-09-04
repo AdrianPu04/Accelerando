@@ -2,14 +2,15 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { ListenPageClient } from "@/app/listen/[pieceId]/listen-page-client";
-import { getAllPieces, getPieceById } from "@/lib/pieces";
+import { HOME_START_PIECE_IDS, getPieceById } from "@/lib/pieces";
 
 interface ListenPageProps {
   params: Promise<{ pieceId: string }>;
 }
 
+/** Prefetch featured starters; other catalog pieces render on demand. */
 export function generateStaticParams() {
-  return getAllPieces().map((piece) => ({ pieceId: piece.id }));
+  return HOME_START_PIECE_IDS.map((pieceId) => ({ pieceId }));
 }
 
 export async function generateMetadata({

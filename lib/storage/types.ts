@@ -21,7 +21,6 @@ export interface ListeningStorage {
     sessionId: string,
     recommendation: Recommendation,
   ): Promise<void>;
-  beginListeningToPiece(pieceId: string): void;
   getCachedAnnotations(pieceId: string): Promise<Annotation[] | null>;
   setCachedAnnotations(
     pieceId: string,

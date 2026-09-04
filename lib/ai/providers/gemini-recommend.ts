@@ -12,7 +12,7 @@ import {
 import { selectPieceResponseSchema } from "@/lib/schemas/recommendation";
 import type { Piece } from "@/types";
 
-const DEFAULT_MODEL = "gemini-3.6-flash";
+const DEFAULT_MODEL = "gemini-3.5-flash-lite";
 
 function extractChunkText(chunk: {
   candidates?: Array<{

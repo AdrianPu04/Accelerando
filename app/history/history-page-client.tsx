@@ -1,17 +1,24 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { AppShell } from "@/components/app-shell";
 import { SessionTimeline } from "@/components/session-timeline";
-import { LoadingPanel } from "@/components/status-panel";
+import { ErrorPanel, LoadingPanel } from "@/components/status-panel";
 import { useSupabase } from "@/components/supabase-provider";
+import { formatStorageError, getErrorMessage } from "@/lib/user-messages";
 import type { SessionWithDetails } from "@/types";
 
 export function HistoryPageClient() {
   const { storage, isReady } = useSupabase();
   const [sessions, setSessions] = useState<SessionWithDetails[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [reloadToken, setReloadToken] = useState(0);
+
+  const retry = useCallback(() => {
+    setReloadToken((token) => token + 1);
+  }, []);
 
   useEffect(() => {
     if (!isReady) {
@@ -20,18 +27,21 @@ export function HistoryPageClient() {
 
     let cancelled = false;
     setIsLoadingHistory(true);
+    setLoadError(null);
 
     void storage
       .getSessionHistory()
       .then((history) => {
         if (!cancelled) {
           setSessions(history);
+          setLoadError(null);
         }
       })
       .catch((error) => {
         console.error("Failed to load history:", error);
         if (!cancelled) {
           setSessions([]);
+          setLoadError(formatStorageError(getErrorMessage(error)).description);
         }
       })
       .finally(() => {
@@ -43,7 +53,7 @@ export function HistoryPageClient() {
     return () => {
       cancelled = true;
     };
-  }, [isReady, storage]);
+  }, [isReady, reloadToken, storage]);
 
   return (
     <AppShell>
@@ -64,6 +74,12 @@ export function HistoryPageClient() {
         <LoadingPanel
           title="Loading your history"
           description="Pulling sessions, reflections, and recommendations…"
+        />
+      ) : loadError ? (
+        <ErrorPanel
+          title="Couldn’t load history"
+          description={loadError}
+          onRetry={retry}
         />
       ) : (
         <SessionTimeline sessions={sessions} />

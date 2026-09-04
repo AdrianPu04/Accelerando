@@ -5,11 +5,12 @@ import { getRecommendationProvider } from "@/lib/ai/get-recommendation-provider"
 import { RecommendationProviderError } from "@/lib/ai/recommendation-types";
 import {
   apiAuthErrorResponse,
-  enforceRateLimit,
   requireApiUser,
 } from "@/lib/api/require-auth";
+import { enforceRateLimits } from "@/lib/api/rate-limit";
 import type { RecommendNextContext } from "@/lib/prompts/recommend-next";
 import { getAllPlayablePieces, getPieceById } from "@/lib/pieces";
+import { sampleRecommendCandidates } from "@/lib/recommend/sample-candidates";
 import { recommendNextRequestSchema } from "@/lib/schemas/recommendation";
 import type { Annotation, Piece } from "@/types";
 
@@ -42,17 +43,17 @@ function buildContext(
       createdAt: body.reflection.createdAt,
     },
     annotations,
-    catalog: getAllPlayablePieces()
-      .filter((candidate) => candidate.id !== piece.id)
-      // Keep the recommend prompt bounded as the YouTube-backed catalog grows.
-      .slice(0, 40),
+    catalog: sampleRecommendCandidates(getAllPlayablePieces(), {
+      excludeId: piece.id,
+      limit: 40,
+    }),
   };
 }
 
 export async function POST(request: Request) {
   try {
     const { userId } = await requireApiUser(request);
-    enforceRateLimit(userId, "recommendations");
+    enforceRateLimits(request, userId, "recommendations");
 
     let json: unknown;
 
@@ -142,7 +143,7 @@ export async function POST(request: Request) {
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: "Invalid request body", details: error.issues },
+        { error: "Invalid request body" },
         { status: 400 },
       );
     }

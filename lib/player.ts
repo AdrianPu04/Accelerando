@@ -1,21 +1,12 @@
-import { getPieceById } from "@/lib/pieces";
 import { usePlayerStore } from "@/stores/player-store";
-import type { Piece } from "@/types";
 
 const CURRENT_SESSION_PREFIX = "accelerando:current-session:";
 
-export function startPieceSession(pieceId: string): Piece {
-  const piece = getPieceById(pieceId);
-
-  if (!piece) {
-    throw new Error(`Unknown piece: ${pieceId}`);
-  }
-
+/** Reset playback state for a piece. Piece metadata comes from the listen page. */
+export function startPieceSession(pieceId: string): void {
   const store = usePlayerStore.getState();
   store.reset();
   store.setPiece(pieceId);
-
-  return piece;
 }
 
 /** Clear any in-progress session so the listen page starts fresh. */

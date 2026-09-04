@@ -1,13 +1,18 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import {
+  readSharedAnnotationCache,
+  writeSharedAnnotationCache,
+} from "@/lib/ai/annotation-cache";
 import { getAnnotationProvider } from "@/lib/ai/get-provider";
 import { AnnotationProviderError } from "@/lib/ai/types";
 import {
   apiAuthErrorResponse,
-  enforceRateLimit,
   requireApiUser,
 } from "@/lib/api/require-auth";
+import { enforceRateLimits } from "@/lib/api/rate-limit";
+import { clampGeneratedAnnotations } from "@/lib/annotations/clamp";
 import { toAnnotations } from "@/lib/annotations";
 import { getPieceById } from "@/lib/pieces";
 import { generateAnnotationsRequestSchema } from "@/lib/schemas/annotation";
@@ -15,7 +20,7 @@ import { generateAnnotationsRequestSchema } from "@/lib/schemas/annotation";
 export async function POST(request: Request) {
   try {
     const { userId } = await requireApiUser(request);
-    enforceRateLimit(userId, "annotations");
+    enforceRateLimits(request, userId, "annotations");
 
     let json: unknown;
 
@@ -32,8 +37,27 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Piece not found" }, { status: 404 });
     }
 
+    const cached = await readSharedAnnotationCache(piece);
+    if (cached) {
+      const annotations = toAnnotations(
+        piece.id,
+        clampGeneratedAnnotations(cached, piece.durationSeconds),
+      );
+      return NextResponse.json({ annotations, provider: "cache" });
+    }
+
     const provider = getAnnotationProvider();
-    const generated = await provider.generateAnnotations(piece);
+    const generated = clampGeneratedAnnotations(
+      await provider.generateAnnotations(piece),
+      piece.durationSeconds,
+    );
+
+    try {
+      await writeSharedAnnotationCache(piece, generated);
+    } catch (error) {
+      console.error("Failed to write annotation cache:", error);
+    }
+
     const annotations = toAnnotations(piece.id, generated);
 
     return NextResponse.json({ annotations, provider: provider.name });
@@ -45,7 +69,7 @@ export async function POST(request: Request) {
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: "Invalid request body", details: error.issues },
+        { error: "Invalid request body" },
         { status: 400 },
       );
     }

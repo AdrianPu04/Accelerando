@@ -8,7 +8,7 @@ import { PieceChip } from "@/components/piece-chip";
 import { EmptyPanel, LoadingPanel } from "@/components/status-panel";
 import { useSupabase } from "@/components/supabase-provider";
 import { buttonVariants } from "@/components/ui/button";
-import { getPieceById } from "@/lib/pieces";
+import { fetchPieceById } from "@/lib/pieces/client";
 import { cn } from "@/lib/utils";
 import type { ListeningSession, Piece, Recommendation } from "@/types";
 
@@ -20,9 +20,13 @@ export function HomePageClient({ pieces }: HomePageClientProps) {
   const { storage, isReady } = useSupabase();
   const [inProgressSession, setInProgressSession] =
     useState<ListeningSession | null>(null);
+  const [inProgressPiece, setInProgressPiece] = useState<Piece | null>(null);
   const [recentRecommendations, setRecentRecommendations] = useState<
     Recommendation[]
   >([]);
+  const [fromPieceLabels, setFromPieceLabels] = useState<Record<string, string>>(
+    {},
+  );
   const [isLoadingActivity, setIsLoadingActivity] = useState(true);
 
   useEffect(() => {
@@ -40,15 +44,59 @@ export function HomePageClient({ pieces }: HomePageClientProps) {
           storage.getRecentRecommendations(3),
         ]);
 
-        if (!cancelled) {
-          setInProgressSession(inProgress);
-          setRecentRecommendations(recommendations);
+        if (cancelled) {
+          return;
         }
+
+        setInProgressSession(inProgress);
+        setRecentRecommendations(recommendations);
+
+        const pieceIds = new Set<string>();
+        if (inProgress) {
+          pieceIds.add(inProgress.pieceId);
+        }
+        for (const recommendation of recommendations) {
+          pieceIds.add(recommendation.fromPieceId);
+        }
+
+        const resolved = await Promise.all(
+          [...pieceIds].map(async (pieceId) => {
+            try {
+              const piece = await fetchPieceById(pieceId);
+              return [pieceId, piece] as const;
+            } catch {
+              return [pieceId, null] as const;
+            }
+          }),
+        );
+
+        if (cancelled) {
+          return;
+        }
+
+        const labels: Record<string, string> = {};
+        let continuePiece: Piece | null = null;
+
+        for (const [pieceId, piece] of resolved) {
+          if (!piece) {
+            continue;
+          }
+
+          labels[pieceId] = piece.composer;
+          if (inProgress && pieceId === inProgress.pieceId) {
+            continuePiece = piece;
+          }
+        }
+
+        setFromPieceLabels(labels);
+        setInProgressPiece(continuePiece);
       } catch (error) {
         console.error("Failed to load home activity:", error);
         if (!cancelled) {
           setInProgressSession(null);
+          setInProgressPiece(null);
           setRecentRecommendations([]);
+          setFromPieceLabels({});
         }
       } finally {
         if (!cancelled) {
@@ -61,10 +109,6 @@ export function HomePageClient({ pieces }: HomePageClientProps) {
       cancelled = true;
     };
   }, [isReady, storage]);
-
-  const inProgressPiece = inProgressSession
-    ? getPieceById(inProgressSession.pieceId)
-    : undefined;
 
   const isFirstVisit =
     isReady &&
@@ -105,7 +149,7 @@ export function HomePageClient({ pieces }: HomePageClientProps) {
 
       <div className="grid gap-12 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)] lg:items-start">
         <div className="space-y-10">
-          {!isLoadingActivity && inProgressPiece ? (
+          {!isLoadingActivity && inProgressPiece && inProgressSession ? (
             <section>
               <h2 className="mb-1 text-xs font-semibold tracking-widest text-muted-foreground uppercase">
                 Continue listening
@@ -136,7 +180,7 @@ export function HomePageClient({ pieces }: HomePageClientProps) {
                 <article key={recommendation.id} className="space-y-3 py-5">
                   <p className="text-[0.65rem] font-semibold tracking-widest text-muted-foreground uppercase">
                     From{" "}
-                    {getPieceById(recommendation.fromPieceId)?.composer ??
+                    {fromPieceLabels[recommendation.fromPieceId] ??
                       "a previous piece"}
                   </p>
                   <h3 className="font-heading text-xl font-semibold tracking-tight text-balance">
