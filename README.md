@@ -52,7 +52,7 @@ Open [http://localhost:3000](http://localhost:3000).
 
 - `/` — featured starters + continue listening
 - `/library` — Open Opus browse/search (server-backed)
-- `/piece/[pieceId]` — catalog or curated work detail
+- `/piece/[pieceId]` — catalog work detail
 - `/listen/[pieceId]` — player, annotations, reflection, recommend
 - `/history` — session timeline
 

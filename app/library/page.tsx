@@ -8,7 +8,6 @@ import {
   searchCatalog,
 } from "@/lib/catalog";
 import { isCatalogWorkPlayable } from "@/lib/catalog/types";
-import { getAllPieces } from "@/lib/pieces";
 
 export const metadata: Metadata = {
   title: "Library",
@@ -28,13 +27,6 @@ export default function LibraryPage() {
   for (const work of initialWorks) {
     if (isCatalogWorkPlayable(work)) {
       playableByOpenOpusId[work.openOpusWorkId] = work.id;
-    }
-  }
-
-  // Prefer curated movement recordings when linked to an OpenOpus work.
-  for (const piece of getAllPieces()) {
-    if (piece.openOpusWorkId) {
-      playableByOpenOpusId[piece.openOpusWorkId] = piece.id;
     }
   }
 

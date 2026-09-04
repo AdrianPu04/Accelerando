@@ -7,7 +7,6 @@ import {
   searchCatalog,
 } from "@/lib/catalog";
 import { isCatalogWorkPlayable } from "@/lib/catalog/types";
-import { getAllPieces } from "@/lib/pieces";
 
 const DEFAULT_LIMIT = 100;
 const MAX_LIMIT = 200;
@@ -38,13 +37,6 @@ export async function GET(request: Request) {
   for (const work of matched) {
     if (isCatalogWorkPlayable(work)) {
       playableByOpenOpusId[work.openOpusWorkId] = work.id;
-    }
-  }
-
-  // Prefer curated movement recordings when linked to an OpenOpus work.
-  for (const piece of getAllPieces()) {
-    if (piece.openOpusWorkId) {
-      playableByOpenOpusId[piece.openOpusWorkId] = piece.id;
     }
   }
 

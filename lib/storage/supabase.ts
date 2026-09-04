@@ -1,6 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import { getCuratedPieceById } from "@/lib/curated-pieces";
 import { fetchPieceById } from "@/lib/pieces/client";
 import {
   rowToAnnotation,
@@ -98,11 +97,6 @@ async function resolvePieceForSession(
   pieceId: string,
   recommendations: Recommendation[],
 ): Promise<Piece | null> {
-  const curated = getCuratedPieceById(pieceId);
-  if (curated) {
-    return curated;
-  }
-
   for (const recommendation of recommendations) {
     if (recommendation.toPiece.id === pieceId) {
       return recommendation.toPiece;
