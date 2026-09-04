@@ -1,6 +1,5 @@
 import Link from "next/link";
 
-import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { CatalogWork } from "@/lib/catalog/types";
 
@@ -10,57 +9,34 @@ interface CatalogWorkRowProps {
 }
 
 export function CatalogWorkRow({ work, playablePieceId }: CatalogWorkRowProps) {
+  const href = playablePieceId
+    ? `/listen/${playablePieceId}`
+    : `/piece/${work.id}`;
+  const actionLabel = playablePieceId ? "Listen" : "Details";
+
+  const meta = [work.composer, work.era, work.genre].filter(Boolean).join(" · ");
+
   return (
-    <div className="grid grid-cols-1 gap-2 border-b border-border py-3 text-sm last:border-b-0 sm:grid-cols-[minmax(0,9rem)_minmax(0,1fr)_auto] sm:items-baseline sm:gap-4 lg:grid-cols-[10rem_minmax(0,1fr)_8rem_7rem_9rem]">
-      <p className="truncate font-heading font-semibold tracking-tight">
-        {work.composer}
-      </p>
-
-      <div className="min-w-0 sm:col-span-1 lg:col-span-1">
-        <Link
-          href={`/piece/${work.id}`}
-          className="text-foreground underline-offset-4 hover:underline"
-        >
-          {work.title}
-        </Link>
-        {(work.recommended || playablePieceId) && (
-          <p className="mt-0.5 text-[0.65rem] tracking-widest text-muted-foreground uppercase">
-            {[
-              work.recommended ? "Essential" : null,
-              playablePieceId ? "Playable" : null,
-            ]
-              .filter(Boolean)
-              .join(" · ")}
-          </p>
-        )}
-        <p className="mt-1 text-xs text-muted-foreground lg:hidden">
-          {[work.era, work.genre].filter(Boolean).join(" · ")}
+    <Link
+      href={href}
+      className={cn(
+        "group grid grid-cols-[minmax(0,1fr)_auto] items-end gap-4 border-b border-border py-4 transition-colors hover:border-foreground/40",
+      )}
+    >
+      <div className="min-w-0 space-y-1">
+        <p className="truncate text-[0.65rem] font-semibold tracking-widest text-muted-foreground uppercase">
+          {meta}
         </p>
-      </div>
-
-      <span className="hidden truncate text-muted-foreground lg:block">
-        {work.era}
-      </span>
-      <span className="hidden truncate text-muted-foreground lg:block">
-        {work.genre}
-      </span>
-
-      <div className="flex gap-3 sm:justify-end">
-        <Link
-          href={`/piece/${work.id}`}
-          className="text-xs font-semibold tracking-widest text-muted-foreground uppercase hover:text-foreground"
-        >
-          Details
-        </Link>
-        {playablePieceId ? (
-          <Link
-            href={`/listen/${playablePieceId}`}
-            className={cn(buttonVariants({ size: "xs" }))}
-          >
-            Listen
-          </Link>
+        <p className="font-heading text-lg font-semibold tracking-tight text-balance">
+          {work.title}
+        </p>
+        {work.subtitle ? (
+          <p className="truncate text-sm text-muted-foreground">{work.subtitle}</p>
         ) : null}
       </div>
-    </div>
+      <span className="pb-1 text-xs font-semibold tracking-widest text-muted-foreground uppercase transition-colors group-hover:text-foreground">
+        {actionLabel}
+      </span>
+    </Link>
   );
 }
