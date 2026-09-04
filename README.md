@@ -55,6 +55,7 @@ Open [http://localhost:3000](http://localhost:3000).
 - `/piece/[pieceId]` — catalog work detail
 - `/listen/[pieceId]` — player, annotations, reflection, recommend
 - `/history` — session timeline
+- `/about` — how to use the app
 
 ## Notes
 

@@ -10,6 +10,7 @@ const NAV_ITEMS = [
   { href: "/", label: "Home" },
   { href: "/library", label: "Library" },
   { href: "/history", label: "History" },
+  { href: "/about", label: "About" },
 ] as const;
 
 interface AppShellProps {
