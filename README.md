@@ -111,3 +111,19 @@ Featured on `/` (catalog ids in `lib/pieces.ts`):
 - Gershwin — Rhapsody in Blue  
 - Elgar — Cello Concerto  
 - Mozart — Symphony No. 40  
+
+## Tests
+
+Playwright e2e covers home/about/library smoke paths and the listen loop
+(annotations → reflection → recommendation). Supabase auth/REST, YouTube IFrame
+API, and AI routes are mocked in `e2e/fixtures.ts`, so a live Supabase project
+or AI keys are not required for the browser tests.
+
+```bash
+npx playwright install chromium   # once
+npm run test:e2e                  # builds + serves on port 3173, then runs tests
+npm run test:e2e:ui               # interactive Playwright UI
+```
+
+The suite uses `next build` + `next start` (not `next dev`) so static chunks load
+reliably under Chromium.
