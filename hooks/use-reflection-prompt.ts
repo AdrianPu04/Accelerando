@@ -1,28 +1,26 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 
-const LISTENING_COMPLETE_THRESHOLD = 0.9;
-
-export function useReflectionPrompt(currentTime: number, duration: number) {
+export function useReflectionPrompt() {
   const [isOpen, setIsOpen] = useState(false);
-
-  useEffect(() => {
-    if (isOpen || duration <= 0) {
-      return;
-    }
-
-    if (currentTime / duration >= LISTENING_COMPLETE_THRESHOLD) {
-      setIsOpen(true);
-    }
-  }, [currentTime, duration, isOpen]);
 
   const openReflection = useCallback(() => {
     setIsOpen(true);
   }, []);
 
+  const closeReflection = useCallback(() => {
+    setIsOpen(false);
+  }, []);
+
+  const setReflectionOpen = useCallback((open: boolean) => {
+    setIsOpen(open);
+  }, []);
+
   return {
     isOpen,
     openReflection,
+    closeReflection,
+    setReflectionOpen,
   };
 }

@@ -14,6 +14,8 @@ interface ReflectionFormProps {
   submittedReflection?: Reflection | null;
   isSaving?: boolean;
   saveError?: string | null;
+  /** Compact layout for modal use (hides outer section chrome). */
+  variant?: "page" | "dialog";
 }
 
 export function ReflectionForm({
@@ -22,12 +24,19 @@ export function ReflectionForm({
   submittedReflection = null,
   isSaving = false,
   saveError = null,
+  variant = "page",
 }: ReflectionFormProps) {
   const [text, setText] = useState("");
 
   if (submittedReflection) {
     return (
-      <section className="animate-fade-rise max-w-prose space-y-3 border-t border-border pt-8">
+      <section
+        className={
+          variant === "page"
+            ? "animate-fade-rise max-w-prose space-y-3 border-t border-border pt-8"
+            : "space-y-3"
+        }
+      >
         <p className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
           Your reflection
         </p>
@@ -52,8 +61,8 @@ export function ReflectionForm({
     });
   };
 
-  return (
-    <section className="animate-fade-rise max-w-prose space-y-4 border-t border-border pt-8">
+  const form = (
+    <>
       {saveError ? (
         <ErrorPanel
           title="Could not save reflection"
@@ -61,16 +70,18 @@ export function ReflectionForm({
         />
       ) : null}
 
-      <div className="space-y-2">
-        <h2 className="font-heading text-2xl font-semibold tracking-tight">
-          What stood out?
-        </h2>
-        <p className="text-sm text-muted-foreground">
-          A moment, mood, or detail that caught your ear. No wrong answers.
-        </p>
-      </div>
+      {variant === "page" ? (
+        <div className="space-y-2">
+          <h2 className="font-heading text-2xl font-semibold tracking-tight">
+            What stood out?
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            A moment, mood, or detail that caught your ear. No wrong answers.
+          </p>
+        </div>
+      ) : null}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-5">
         <label className="sr-only" htmlFor="reflection-text">
           Your reflection
         </label>
@@ -80,8 +91,9 @@ export function ReflectionForm({
           value={text}
           maxLength={REFLECTION_MAX_LENGTH}
           onChange={(event) => setText(event.target.value)}
-          rows={5}
+          rows={variant === "dialog" ? 6 : 5}
           disabled={isSaving}
+          autoFocus={variant === "dialog"}
           className="min-h-28 rounded-none border-0 border-b border-input bg-transparent px-0 shadow-none focus-visible:border-foreground focus-visible:ring-0"
         />
         <div className="flex items-center justify-between gap-4">
@@ -93,6 +105,16 @@ export function ReflectionForm({
           </Button>
         </div>
       </form>
+    </>
+  );
+
+  if (variant === "dialog") {
+    return <div className="space-y-5">{form}</div>;
+  }
+
+  return (
+    <section className="animate-fade-rise max-w-prose space-y-4 border-t border-border pt-8">
+      {form}
     </section>
   );
 }

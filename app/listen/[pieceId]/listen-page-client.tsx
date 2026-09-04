@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { AnnotationCard } from "@/components/annotation-card";
 import { AnnotationReview } from "@/components/annotation-review";
 import { AnnotationTimeline } from "@/components/annotation-timeline";
+import { AppDialog } from "@/components/app-dialog";
 import { AppShell } from "@/components/app-shell";
 import { AudioPlayer } from "@/components/audio-player";
 import { PlaybackControls } from "@/components/playback-controls";
@@ -57,10 +58,11 @@ export function ListenPageClient({ piece }: ListenPageClientProps) {
     isPersistingReflection,
     persistReflectionError,
   } = useListeningSession(piece.id);
-  const { isOpen: isReflectionOpen, openReflection } = useReflectionPrompt(
-    player.currentTime,
-    player.duration,
-  );
+  const {
+    isOpen: isReflectionOpen,
+    openReflection,
+    setReflectionOpen,
+  } = useReflectionPrompt();
 
   const {
     data: fetchedAnnotations,
@@ -159,6 +161,7 @@ export function ListenPageClient({ piece }: ListenPageClientProps) {
 
   const handleReflectionSubmit = async (nextReflection: Reflection) => {
     await persistReflection(nextReflection);
+    setReflectionOpen(false);
   };
 
   const handleStartListening = (nextPieceId: string) => {
@@ -181,10 +184,39 @@ export function ListenPageClient({ piece }: ListenPageClientProps) {
   const hasAnnotations =
     !isAnnotationsPending && !isAnnotationsError && annotations.length > 0;
 
-  const showAfterListening = Boolean(isReflectionOpen || reflection);
+  const showReflectionDialog = isReflectionOpen && !reflection;
+
+  useEffect(() => {
+    if (showReflectionDialog) {
+      player.pause();
+    }
+  }, [showReflectionDialog, player.pause]);
 
   return (
     <AppShell className="gap-6" onNavigateHome={() => player.pause()}>
+      <AppDialog
+        open={showReflectionDialog}
+        onOpenChange={(open) => {
+          if (!open) {
+            setReflectionOpen(false);
+            return;
+          }
+          player.pause();
+          setReflectionOpen(true);
+        }}
+        title="What stood out?"
+        description="A moment, mood, or detail that caught your ear. No wrong answers."
+      >
+        <ReflectionForm
+          pieceId={piece.id}
+          variant="dialog"
+          submittedReflection={null}
+          onSubmit={handleReflectionSubmit}
+          isSaving={isPersistingReflection}
+          saveError={persistReflectionError}
+        />
+      </AppDialog>
+
       <div className="grid min-h-[calc(100vh-5.5rem)] gap-x-8 gap-y-10 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:items-start">
         <aside className="flex flex-col gap-5 lg:sticky lg:top-5">
           <header className="space-y-2">
@@ -216,7 +248,7 @@ export function ListenPageClient({ piece }: ListenPageClientProps) {
               onPause={player.pause}
             />
 
-            {player.isReady && !isReflectionOpen && !reflection ? (
+            {player.isReady && !reflection ? (
               <button
                 type="button"
                 onClick={handleDoneListening}
@@ -287,7 +319,7 @@ export function ListenPageClient({ piece }: ListenPageClientProps) {
           {!isAnnotationsPending &&
           !isAnnotationsError &&
           annotations.length === 0 &&
-          showAfterListening ? (
+          reflection ? (
             <EmptyPanel
               title="No annotations available"
               description="Recommendations need at least one annotation. Regenerate or reload to try again."
@@ -304,7 +336,7 @@ export function ListenPageClient({ piece }: ListenPageClientProps) {
             />
           ) : null}
 
-          {showAfterListening ? (
+          {reflection ? (
             <ReflectionForm
               pieceId={piece.id}
               submittedReflection={reflection}

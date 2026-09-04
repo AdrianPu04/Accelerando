@@ -20,7 +20,7 @@ const STEPS = [
   },
   {
     title: "Reflect",
-    body: "When you finish (or nearly finish), write a short reflection about what stood out. Your words matter more than a rating.",
+    body: "When you’re ready, click Done listening and write a short reflection about what stood out. Your words matter more than a rating.",
   },
   {
     title: "Get a reasoned next listen",
